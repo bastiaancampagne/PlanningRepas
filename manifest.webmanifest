@@ -1,21 +1,24 @@
 {
   "name": "PlanningRepas",
   "short_name": "PlanningRepas",
-  "description": "Planning des repas et listes de courses",
+  "description": "Planning de repas, recettes et listes de courses",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#fffaf1",
-  "theme_color": "#e9f5ea",
+  "background_color": "#fff8ec",
+  "theme_color": "#1f7a4d",
   "icons": [
     {
       "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }

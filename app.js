@@ -20,6 +20,9 @@ function show(id){
   $$('.screen').forEach(x=>x.classList.remove('active'));
   $('#'+id).classList.add('active');
   document.body.dataset.scene=id;
+  document.querySelectorAll('.bottom-nav button').forEach(
+    b=>b.classList.toggle('active', b.dataset.target===id)
+  );
   window.scrollTo(0,0);
   if(id==='menus'){menuAutoCenter=true;renderMenus();}
   if(id==='courses')renderShopping();
@@ -208,3 +211,5 @@ function addShoppingItem(){const n=prompt('Article à ajouter :');if(!n)return;c
 
 $('#pdf-file').addEventListener('change',e=>importPdf(e.target.files[0]));
 if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js');
+
+requestAnimationFrame(()=>document.querySelector('.bottom-nav button[data-target="home"]')?.classList.add('active'));

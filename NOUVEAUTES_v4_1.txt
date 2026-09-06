@@ -1,0 +1,9 @@
+PlanningRepas PWA v4.1
+
+Ajout d'une barre de navigation fixe en bas :
+🏠 Accueil | 🍴 Menus | 🛒 Courses | 📚 Recettes | ✍️ Nouveau
+
+La page active est mise en évidence.
+Le bouton « Nouveau » ouvre la page « Nouveau planning ».
+La signature « Bastiaan (31) TM » reste visible sous la barre.
+Le cache PWA est mis à jour afin de forcer le nouveau visuel.

@@ -15,22 +15,69 @@ const fr=d=>d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'lo
 const short=d=>d.toLocaleDateString('fr-FR',{day:'numeric',month:'long'});
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 
-function show(id){$$('.screen').forEach(x=>x.classList.remove('active'));$('#'+id).classList.add('active');window.scrollTo(0,0);if(id==='menus')renderMenus();if(id==='courses')renderShopping();if(id==='recipes')renderRecipes();}
+let menuAutoCenter=true;
+function show(id){
+  $$('.screen').forEach(x=>x.classList.remove('active'));
+  $('#'+id).classList.add('active');
+  document.body.dataset.scene=id;
+  window.scrollTo(0,0);
+  if(id==='menus'){menuAutoCenter=true;renderMenus();}
+  if(id==='courses')renderShopping();
+  if(id==='recipes')renderRecipes();
+}
 function snap(){undoStack.push(JSON.stringify(menus));if(undoStack.length>20)undoStack.shift();}
 function undo(){if(!undoStack.length)return alert('Rien à annuler.');menus=JSON.parse(undoStack.pop());save();renderMenus();}
 function ensure(date){if(!menus[date])menus[date]={midday:[],evening:[]};}
 
 function renderMenus(){
- const ds=dates();if(!ds.length){$('#menus-list').innerHTML='<div class="card">Aucun planning. Utilisez « Nouveau planning ».</div>';return;}
+ const ds=dates();
+ if(!ds.length){
+   $('#menus-list').innerHTML='<div class="card">Aucun planning. Utilisez « Nouveau planning ».</div>';
+   return;
+ }
+ const today=iso(new Date());
+ const todayIndex=ds.indexOf(today);
+ if(menuAutoCenter && todayIndex>=0) selectedWeek=Math.floor(todayIndex/7);
  const start=selectedWeek*7,list=ds.slice(start,start+7);
  $('#week-label').textContent=list.length?`${short(parseDate(list[0]))} – ${short(parseDate(list[list.length-1]))}`:'';
- $('#prev-week').disabled=selectedWeek<=0;$('#next-week').disabled=(selectedWeek+1)*7>=ds.length;
+ $('#prev-week').disabled=selectedWeek<=0;
+ $('#next-week').disabled=(selectedWeek+1)*7>=ds.length;
  $('#menus-list').innerHTML=list.map(date=>dayCard(date,menus[date]||{midday:[],evening:[]})).join('');
+ if(menuAutoCenter){
+   menuAutoCenter=false;
+   requestAnimationFrame(()=>{
+     const target=document.querySelector(`[data-menu-date="${today}"]`);
+     if(target) target.scrollIntoView({behavior:'auto',block:'center'});
+   });
+ }
 }
-function dayCard(date,d){return `<div class="card"><div class="day-title">${esc(fr(parseDate(date)))}</div><div class="slot mid"><b>☀️ Midi</b>${slotHtml(date,'midday',d.midday||[])}<button class="add" onclick="addMeal('${date}','midday')">＋ Ajouter un repas</button></div><div class="slot eve"><b>🌙 Soir</b>${slotHtml(date,'evening',d.evening||[])}<button class="add" onclick="addMeal('${date}','evening')">＋ Ajouter un repas</button></div></div>`;}
+function changeWeek(delta){
+ menuAutoCenter=false;
+ selectedWeek+=delta;
+ renderMenus();
+ window.scrollTo({top:0,behavior:'smooth'});
+}
+function dayCard(date,d){
+ const isToday=date===iso(new Date());
+ return `<div class="card day-card ${isToday?'today-card':''}" data-menu-date="${date}">
+   <div class="day-title">${isToday?'<span class="today-badge">Aujourd’hui</span> ':''}${esc(fr(parseDate(date)))}</div>
+   <div class="slot mid"><b>☀️ Midi</b>${slotHtml(date,'midday',d.midday||[])}<button class="add" onclick="addMeal('${date}','midday')">＋ Ajouter un repas</button></div>
+   <div class="slot eve"><b>🌙 Soir</b>${slotHtml(date,'evening',d.evening||[])}<button class="add" onclick="addMeal('${date}','evening')">＋ Ajouter un repas</button></div>
+ </div>`;
+}
 function slotHtml(date,slot,arr){
  if(!arr.length)return `<div class="meal"><i>Pas de repas prévu</i></div>`;
- return arr.map((m,i)=>`<div class="meal"><div class="meal-name">${esc(m.name)}</div><div class="meal-meta">${m.people?esc(m.people)+' pers.':''}</div><div class="actions"><button class="move" onclick="openMove('${date}','${slot}',${i})">Déplacer</button><button class="swap" onclick="openSwap('${date}','${slot}',${i})">Échanger</button><button class="delete" onclick="removeMeal('${date}','${slot}',${i})">Supprimer</button><button class="resto" onclick="restaurant('${date}','${slot}',${i})">Restaurant</button></div></div>`).join('');
+ return arr.map((m,i)=>`<div class="meal">
+   <div class="meal-name">${esc(m.name)}</div>
+   <div class="meal-ingredients"><b>Ingrédients :</b> ${esc(m.ingredients||'non renseignés')}</div>
+   <div class="meal-meta">${m.people?`👥 ${esc(m.people)} convive${Number(m.people)>1?'s':''}`:'👥 nombre de convives non renseigné'}</div>
+   <div class="actions">
+     <button class="move" onclick="openMove('${date}','${slot}',${i})">Déplacer</button>
+     <button class="swap" onclick="openSwap('${date}','${slot}',${i})">Échanger</button>
+     <button class="delete" onclick="removeMeal('${date}','${slot}',${i})">Supprimer</button>
+     <button class="resto" onclick="restaurant('${date}','${slot}',${i})">Restaurant</button>
+   </div>
+ </div>`).join('');
 }
 function addMeal(date,slot){const n=prompt('Nom du repas :');if(!n)return;snap();ensure(date);menus[date][slot].push({name:n.trim(),ingredients:recipes[n.trim().toLowerCase()]||'',people:0});save();renderMenus();}
 function removeMeal(date,slot,i){if(!confirm('Supprimer ce repas ?'))return;snap();menus[date][slot].splice(i,1);save();renderMenus();}
@@ -62,10 +109,100 @@ function renderRecipes(){const box=$('#recipe-list');const keys=Object.keys(reci
 function editRecipe(key=''){const name=prompt('Nom de la recette :',key?key.replace(/^./,c=>c.toUpperCase()):'');if(!name)return;const ing=prompt('Ingrédients séparés par • :',key?recipes[key]||'':'');if(ing===null)return;if(key&&key!==name.toLowerCase())delete recipes[key];recipes[name.toLowerCase()]=ing.trim();localStorage.setItem(K.recipes,JSON.stringify(recipes));renderRecipes();}
 
 function categoryFor(item){const s=item.toLowerCase();if(/poulet|porc|boeuf|bœuf|jambon|lardon|saucisse|poisson|thon|cabillaud|œuf|oeuf|chorizo|paleron/.test(s))return'Viandes, poissons et œufs';if(/riz|pâte|pates|spaghetti|fusilli|penne|macaroni|semoule|lentille|haricot rouge|pomme de terre|farine/.test(s))return'Féculents et légumineuses';if(/tomate|carotte|courgette|poivron|oignon|salade|poireau|champignon|légume|legume|fruit|citron|roquette|petit pois|maïs|mais/.test(s))return'Légumes et fruits';if(/lait|crème|creme|fromage|beurre|pâte brisée|pate brisee|pain/.test(s))return'Crèmerie et boulangerie';return'Épicerie et assaisonnement';}
-function generateShoppingAsk(){$('#sheet').innerHTML=`<h2>Générer les courses</h2><select id="shop-weeks" class="field"><option value="1">1 semaine</option><option value="2">2 semaines</option><option value="3">3 semaines</option><option value="4">4 semaines</option></select><p>Recherche Web pour les recettes inconnues via TheMealDB.</p><button class="secondary" onclick="closeModal()">Annuler</button><button class="primary" onclick="generateShopping()">Générer</button>`;openModal();}
-async function generateShopping(){const weeks=+$('#shop-weeks').value;closeModal();show('courses');$('#shop-progress').style.display='block';$('#shop-progress').textContent='Recherche des ingrédients…';const ds=dates().slice(0,weeks*7),perWeek={};for(let w=1;w<=weeks;w++)perWeek[w]={};for(let idx=0;idx<ds.length;idx++){const date=ds[idx],w=Math.floor(idx/7)+1;for(const slot of ['midday','evening'])for(const meal of menus[date][slot]||[]){if(/restaurant|aucun repas/i.test(meal.name))continue;let ing=meal.ingredients||recipes[meal.name.toLowerCase()]||'';if(!ing){ing=await lookupIngredients(meal.name);if(ing){recipes[meal.name.toLowerCase()]=ing;meal.ingredients=ing;localStorage.setItem(K.recipes,JSON.stringify(recipes));save()}}if(!ing){(perWeek[w]['À compléter']??=[]).push('Ingrédients à vérifier : '+meal.name);continue}for(const raw of ing.split(/\s*[•;]\s*/)){const item=raw.trim();if(!item||/aucun ingrédient/i.test(item))continue;const cat=categoryFor(item);(perWeek[w][cat]??=[]).push(item)}}}shopping=perWeek;localStorage.setItem(K.shopping,JSON.stringify(shopping));selectedShopWeek=1;$('#shop-progress').style.display='none';renderShopping();}
+function generateShoppingAsk(){
+ const maxWeeks=Math.max(1,Math.ceil(dates().length/7));
+ let opts=`<option value="${maxWeeks}" selected>Tout le planning (${maxWeeks} semaine${maxWeeks>1?'s':''})</option>`;
+ for(let i=1;i<=maxWeeks;i++) opts+=`<option value="${i}">${i} semaine${i>1?'s':''}</option>`;
+ $('#sheet').innerHTML=`<h2>Générer les courses</h2>
+   <p>Choisissez la période à générer. Par défaut, toutes les semaines du planning sont incluses.</p>
+   <select id="shop-weeks" class="field">${opts}</select>
+   <p>Recherche Web pour les recettes inconnues via TheMealDB.</p>
+   <button class="secondary" onclick="closeModal()">Annuler</button>
+   <button class="primary" onclick="generateShopping()">Générer</button>`;
+ openModal();
+}
+async function generateShopping(){
+ const maxWeeks=Math.max(1,Math.ceil(dates().length/7));
+ const weeks=Math.min(maxWeeks,Math.max(1,+$('#shop-weeks').value||maxWeeks));
+ closeModal();
+ show('courses');
+ $('#shop-progress').style.display='block';
+ $('#shop-progress').textContent=`Génération des listes pour ${weeks} semaine${weeks>1?'s':''}…`;
+ const ds=dates().slice(0,weeks*7),perWeek={};
+ for(let w=1;w<=weeks;w++) perWeek[w]={};
+ for(let idx=0;idx<ds.length;idx++){
+   const date=ds[idx],w=Math.floor(idx/7)+1;
+   for(const slot of ['midday','evening']) for(const meal of menus[date][slot]||[]){
+     if(/restaurant|aucun repas/i.test(meal.name))continue;
+     let ing=meal.ingredients||recipes[meal.name.toLowerCase()]||'';
+     if(!ing){
+       ing=await lookupIngredients(meal.name);
+       if(ing){
+         recipes[meal.name.toLowerCase()]=ing;
+         meal.ingredients=ing;
+         localStorage.setItem(K.recipes,JSON.stringify(recipes));
+         save();
+       }
+     }
+     if(!ing){
+       (perWeek[w]['À compléter']??=[]).push('Ingrédients à vérifier : '+meal.name);
+       continue;
+     }
+     for(const raw of ing.split(/\s*[•;]\s*/)){
+       const item=raw.trim();
+       if(!item||/aucun ingrédient/i.test(item))continue;
+       const cat=categoryFor(item);
+       (perWeek[w][cat]??=[]).push(item);
+     }
+   }
+ }
+ shopping=perWeek;
+ localStorage.setItem(K.shopping,JSON.stringify(shopping));
+ selectedShopWeek=1;
+ $('#shop-progress').style.display='none';
+ renderShopping();
+}
 async function lookupIngredients(name){try{const r=await fetch('https://www.themealdb.com/api/json/v1/1/search.php?s='+encodeURIComponent(name));const j=await r.json(),m=j.meals?.[0];if(!m)return'';const a=[];for(let i=1;i<=20;i++){const ing=(m['strIngredient'+i]||'').trim(),qty=(m['strMeasure'+i]||'').trim();if(ing)a.push(ing+(qty?' '+qty:''))}return a.join(' • ')}catch(e){return''}}
-function renderShopping(){const max=Math.max(1,...Object.keys(shopping).map(Number));selectedShopWeek=Math.min(Math.max(1,selectedShopWeek),max);$('#shop-week-label').textContent='Semaine '+selectedShopWeek;$('#shop-prev').disabled=selectedShopWeek<=1;$('#shop-next').disabled=selectedShopWeek>=max;const box=$('#shop-list'),sw=shopping[selectedShopWeek];if(!sw||!Object.keys(sw).length){box.innerHTML='<div class="card">Aucune liste générée pour ce planning.</div>';return}const checks=JSON.parse(localStorage.getItem(K.checks)||'{}');box.innerHTML='';Object.entries(sw).forEach(([cat,items])=>{box.insertAdjacentHTML('beforeend',`<div class="shopcat">${esc(cat)}</div>`);[...new Set(items)].forEach(item=>{const key=`${selectedShopWeek}|${cat}|${item}`;box.insertAdjacentHTML('beforeend',`<label class="shopitem"><input type="checkbox" ${checks[key]?'checked':''} onchange="toggleCheck('${encodeURIComponent(key)}',this.checked)"><span>${esc(item)}</span></label>`)});});}
+function changeShopWeek(delta){
+ selectedShopWeek+=delta;
+ renderShopping();
+ window.scrollTo({top:0,behavior:'smooth'});
+}
+function renderShopping(){
+ const maxWeeks=Math.max(1,Math.ceil(dates().length/7));
+ selectedShopWeek=Math.min(Math.max(1,selectedShopWeek),maxWeeks);
+ $('#shop-week-label').textContent='Semaine '+selectedShopWeek+' / '+maxWeeks;
+ $('#shop-prev').disabled=selectedShopWeek<=1;
+ $('#shop-next').disabled=selectedShopWeek>=maxWeeks;
+ const box=$('#shop-list'),sw=shopping[String(selectedShopWeek)]||shopping[selectedShopWeek];
+ const custom=JSON.parse(localStorage.getItem(K.custom)||'{}');
+ const personal=custom[String(selectedShopWeek)]||custom[selectedShopWeek]||[];
+ const checks=JSON.parse(localStorage.getItem(K.checks)||'{}');
+ box.innerHTML='';
+ if(!sw||!Object.keys(sw).length){
+   box.innerHTML=`<div class="card shop-empty"><b>Semaine ${selectedShopWeek}</b><br>
+     Cette liste n’a pas encore été générée. Utilisez « Générer / régénérer » et choisissez « Tout le planning ».</div>`;
+ }else{
+   Object.entries(sw).forEach(([cat,items])=>{
+     box.insertAdjacentHTML('beforeend',`<div class="shopcat">${esc(cat)}</div>`);
+     [...new Set(items)].forEach(item=>{
+       const key=`${selectedShopWeek}|${cat}|${item}`;
+       box.insertAdjacentHTML('beforeend',`<label class="shopitem">
+         <input type="checkbox" ${checks[key]?'checked':''} onchange="toggleCheck('${encodeURIComponent(key)}',this.checked)">
+         <span>${esc(item)}</span></label>`);
+     });
+   });
+ }
+ if(personal.length){
+   box.insertAdjacentHTML('beforeend','<div class="shopcat">Ajouts personnels</div>');
+   [...new Set(personal)].forEach(item=>{
+     const key=`${selectedShopWeek}|Ajouts personnels|${item}`;
+     box.insertAdjacentHTML('beforeend',`<label class="shopitem personal">
+       <input type="checkbox" ${checks[key]?'checked':''} onchange="toggleCheck('${encodeURIComponent(key)}',this.checked)">
+       <span>${esc(item)}</span></label>`);
+   });
+ }
+}
 function toggleCheck(key,checked){key=decodeURIComponent(key);const checks=JSON.parse(localStorage.getItem(K.checks)||'{}');checks[key]=checked;localStorage.setItem(K.checks,JSON.stringify(checks))}
 function addShoppingItem(){const n=prompt('Article à ajouter :');if(!n)return;const c=JSON.parse(localStorage.getItem(K.custom)||'{}');(c[selectedShopWeek]??=[]).push(n.trim());localStorage.setItem(K.custom,JSON.stringify(c));alert('Article ajouté aux ajouts personnels.');}
 

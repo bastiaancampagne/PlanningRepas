@@ -1,0 +1,13 @@
+PlanningRepas PWA v4 — maquette intégrée
+
+- Ingrédients affichés entre le nom du repas et le nombre de convives.
+- À l’ouverture de Menus, la semaine contenant aujourd’hui est sélectionnée et la journée du jour est centrée à l’écran.
+- Personnages en arrière-plan plein écran sur toutes les pages, contrôles en premier plan translucide.
+- Listes de courses multi-semaines corrigées :
+  * navigation sur toutes les semaines du planning ;
+  * génération par défaut de tout le planning ;
+  * message clair si une semaine n’est pas encore générée ;
+  * affichage des ajouts personnels ;
+  * indication « Semaine X / N ».
+- Cache PWA incrémenté.
+- Maquette de référence incluse dans le dossier maquette.

@@ -1,9 +1,8 @@
-# PlanningRepas PWA v6
+# PlanningRepas PWA v4
 
-Version PWA dérivée du projet Android PlanningRepas_v6.
+Version modernisée du PlanningRepas PWA v3 fourni.
 
-Fonctions : menus par semaine, déplacement/échange/suppression/Restaurant, saisie manuelle 1 à 4 semaines, import PDF texte, vérification avant confirmation, recettes, génération des courses 1 à 4 semaines, recherche d’ingrédients via TheMealDB, persistance locale et installation iOS/Android.
+Déploiement : décompresser puis envoyer le CONTENU du dossier à la racine du dépôt GitHub Pages.
+Après déploiement, faire une fois **Ctrl+F5** pour forcer le nouveau cache.
 
-Déploiement GitHub Pages : décompresser puis envoyer le CONTENU du dossier à la racine du repository (index.html, app.js, styles.css, sw.js, manifest.webmanifest, assets/, icônes).
-
-L’import PDF et la recherche d’ingrédients demandent une connexion Internet au moment de l’utilisation.
+La maquette de référence est incluse dans `maquette/PlanningRepas_maquette_v4.png`.

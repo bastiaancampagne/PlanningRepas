@@ -1,0 +1,13 @@
+PlanningRepas PWA v4.2
+
+Import PDF amélioré :
+- date ;
+- repas Midi / Soir ;
+- nombre de personnes ;
+- ingrédients ;
+- recettes importées ajoutées dans « Mes recettes » après confirmation ;
+- ingrédients directement réutilisés pour les listes de courses ;
+- écran de vérification enrichi ;
+- correction possible avant confirmation ;
+- exemple PDF affiché sur la page « Nouveau planning » ;
+- bouton « Copier » pour récupérer l’exemple.

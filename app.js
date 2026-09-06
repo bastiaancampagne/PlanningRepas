@@ -96,17 +96,110 @@ function newPlanning(){show('newplan')}
 function manualSetup(){$('#sheet').innerHTML=`<h2>Saisie manuelle</h2><label>Date de départ</label><input id="man-start" class="field" type="date" value="${iso(new Date())}"><label>Durée</label><select id="man-weeks" class="field"><option value="1">1 semaine</option><option value="2">2 semaines</option><option value="3">3 semaines</option><option value="4">4 semaines</option></select><button class="secondary" onclick="closeModal()">Annuler</button><button class="primary" onclick="startManual()">Continuer</button>`;openModal();}
 function startManual(){const start=parseDate($('#man-start').value),weeks=+$('#man-weeks').value;closeModal();pending={};let html='';for(let i=0;i<weeks*7;i++){const d=new Date(start);d.setDate(d.getDate()+i);const k=iso(d),ex=menus[k]||{midday:[],evening:[]};html+=`<div class="card"><div class="day-title">${esc(fr(d))}</div><input class="field manual" data-date="${k}" data-slot="midday" placeholder="Midi — repas" value="${esc(ex.midday?.[0]?.name||'')}"><input class="field manual" data-date="${k}" data-slot="evening" placeholder="Soir — repas" value="${esc(ex.evening?.[0]?.name||'')}"></div>`;}$('#manual-list').innerHTML=html;show('manual');}
 function verifyManual(){pending={};$$('.manual').forEach(i=>{const d=i.dataset.date,s=i.dataset.slot;pending[d]??={midday:[],evening:[]};const n=i.value.trim();if(n)pending[d][s]=[{name:n,ingredients:recipes[n.toLowerCase()]||'',people:0}];});renderVerification();}
-function renderVerification(){let missing=0,count=0;Object.values(pending).forEach(d=>['midday','evening'].forEach(s=>d[s]?.length?count+=d[s].length:missing++));$('#verify-status').innerHTML=`<span class="badge ok">✅ ${count} repas reconnus</span> <span class="badge warn">⚠️ ${missing} éléments à vérifier</span>`;$('#verify-list').innerHTML=Object.keys(pending).sort().map(date=>`<div class="card"><div class="day-title">${esc(fr(parseDate(date)))}</div>${pendingLine(date,'midday',pending[date].midday)}${pendingLine(date,'evening',pending[date].evening)}</div>`).join('');show('verify');}
-function pendingLine(date,slot,arr){const label=slot==='midday'?'☀️ Midi':'🌙 Soir',name=arr?.[0]?.name||'[ À renseigner ]';return `<button class="add" onclick="editPending('${date}','${slot}')">${label} — ${esc(name)} ✎</button>`;}
-function editPending(date,slot){const old=pending[date][slot]?.[0]?.name||'',n=prompt('Nom du repas :',old);if(n===null)return;pending[date][slot]=n.trim()?[{name:n.trim(),ingredients:recipes[n.trim().toLowerCase()]||'',people:0}]:[];renderVerification();}
-function confirmPending(){if(!confirm('Remplacer le planning actuel ?'))return;snap();menus=structuredClone(pending);shopping={};save();localStorage.removeItem(K.shopping);selectedWeek=0;show('menus');}
+function renderVerification(){
+ let missingSlots=0,missingDetails=0,count=0;
+ Object.values(pending).forEach(d=>['midday','evening'].forEach(s=>{
+   const meal=d[s]?.[0];
+   if(meal){count++;if(!meal.ingredients||!meal.people)missingDetails++;}
+   else missingSlots++;
+ }));
+ $('#verify-status').innerHTML=`<span class="badge ok">✅ ${count} repas reconnus</span> <span class="badge warn">⚠️ ${missingSlots} créneau(x) vide(s)</span> <span class="badge warn">📝 ${missingDetails} repas à compléter</span>`;
+ $('#verify-list').innerHTML=Object.keys(pending).sort().map(date=>`<div class="card"><div class="day-title">${esc(fr(parseDate(date)))}</div>${pendingLine(date,'midday',pending[date].midday)}${pendingLine(date,'evening',pending[date].evening)}</div>`).join('');
+ show('verify');
+}
+function pendingLine(date,slot,arr){
+ const label=slot==='midday'?'☀️ Midi':'🌙 Soir',meal=arr?.[0];
+ if(!meal)return `<div class="pending-meal missing"><div><b>${label}</b><br>[ À renseigner ]</div><button class="smallbtn secondary" onclick="editPending('${date}','${slot}')">✎ Modifier</button></div>`;
+ return `<div class="pending-meal"><div class="pending-main"><b>${label} — ${esc(meal.name)}</b><div class="pending-meta">👥 ${meal.people||'non renseigné'} personne(s)</div><div class="pending-ingredients"><b>Ingrédients :</b> ${esc(meal.ingredients||'non renseignés')}</div></div><button class="smallbtn secondary" onclick="editPending('${date}','${slot}')">✎ Modifier</button></div>`;
+}
+function editPending(date,slot){
+ const old=pending[date][slot]?.[0]||{name:'',ingredients:'',people:0};
+ const n=prompt('Nom du repas :',old.name||'');if(n===null)return;
+ if(!n.trim()){pending[date][slot]=[];renderVerification();return;}
+ const p=prompt('Nombre de personnes :',old.people||'');if(p===null)return;
+ const defaultIng=old.ingredients||recipes[n.trim().toLowerCase()]||'';
+ const ing=prompt('Ingrédients (séparés par ; ou •) :',defaultIng);if(ing===null)return;
+ pending[date][slot]=[{name:n.trim(),ingredients:ing.trim(),people:Math.max(0,parseInt(p,10)||0)}];
+ renderVerification();
+}
+function confirmPending(){
+ if(!confirm('Remplacer le planning actuel ?'))return;
+ snap();menus=structuredClone(pending);
+ Object.values(menus).forEach(day=>['midday','evening'].forEach(slot=>(day[slot]||[]).forEach(meal=>{if(meal.name&&meal.ingredients)recipes[meal.name.toLowerCase()]=meal.ingredients;})));
+ localStorage.setItem(K.recipes,JSON.stringify(recipes));
+ shopping={};save();localStorage.removeItem(K.shopping);selectedWeek=0;show('menus');
+}
 
 async function importPdf(file){
- if(!file)return;$('#pdf-progress').style.display='block';$('#pdf-progress').textContent='Analyse du PDF texte en cours…';
- try{await ensurePdfJs();const buf=await file.arrayBuffer();const pdf=await pdfjsLib.getDocument({data:buf}).promise;let text='';for(let p=1;p<=pdf.numPages;p++){const page=await pdf.getPage(p);const tc=await page.getTextContent();text+=tc.items.map(x=>x.str).join(' ')+'\n';}pending=parsePlanningText(text);if(!Object.keys(pending).length)alert("Aucun planning reconnu. PDF texte uniquement.");else renderVerification();}catch(e){alert("Lecture PDF impossible : "+e.message)}finally{$('#pdf-progress').style.display='none';$('#pdf-file').value='';}
+ if(!file)return;
+ $('#pdf-progress').style.display='block';
+ $('#pdf-progress').textContent='Analyse du PDF : repas, convives et ingrédients…';
+ try{
+   await ensurePdfJs();
+   const buf=await file.arrayBuffer();
+   const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+   let text='';
+   for(let p=1;p<=pdf.numPages;p++){
+     const page=await pdf.getPage(p);
+     const tc=await page.getTextContent();
+     text+=pdfItemsToText(tc.items)+'\n';
+   }
+   pending=parsePlanningText(text);
+   if(!Object.keys(pending).length)alert("Aucun planning reconnu. Vérifiez que le PDF contient du vrai texte et respecte l'exemple affiché.");
+   else renderVerification();
+ }catch(e){alert("Lecture PDF impossible : "+e.message)}
+ finally{$('#pdf-progress').style.display='none';$('#pdf-file').value='';}
 }
 function ensurePdfJs(){return new Promise((resolve,reject)=>{if(window.pdfjsLib)return resolve();const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';s.onload=()=>{pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';resolve()};s.onerror=()=>reject(new Error('Lecteur PDF indisponible'));document.head.appendChild(s);});}
-function parsePlanningText(txt){const out={};let current=null;for(const raw of txt.split(/\n|\r/)){const line=raw.trim();if(!line)continue;let m=line.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);if(m)current=`${m[1]}-${String(m[2]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`;else{m=line.match(/(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/);if(m)current=`${m[3]}-${String(m[2]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`;}if(!current)continue;out[current]??={midday:[],evening:[]};let mm=line.match(/midi\s*[:\-–—]?\s*(.+)$/i);if(mm?.[1]){const n=mm[1].trim();out[current].midday=[{name:n,ingredients:recipes[n.toLowerCase()]||'',people:0}]}let ms=line.match(/soir\s*[:\-–—]?\s*(.+)$/i);if(ms?.[1]){const n=ms[1].trim();out[current].evening=[{name:n,ingredients:recipes[n.toLowerCase()]||'',people:0}]}}return out;}
+function pdfItemsToText(items){
+ let lines=[],current=[],lastY=null;
+ const flush=()=>{const v=current.join(' ').replace(/\s+/g,' ').trim();if(v)lines.push(v);current=[]};
+ for(const item of items){
+   const y=item.transform?.[5]??0;
+   if(lastY!==null&&Math.abs(y-lastY)>3)flush();
+   if(item.str)current.push(item.str);
+   if(item.hasEOL)flush();
+   lastY=y;
+ }
+ flush();
+ return lines.join('\n');
+}
+function parsePlanningText(txt){
+ const out={};let currentDate=null,currentSlot=null;
+ const normalized=String(txt||'').replace(/\u00a0/g,' ').replace(/[ \t]+/g,' ')
+   .replace(/\s+(?=(?:midi|soir|personnes?|convives?|ingr[ée]dients?)\s*[:\-–—])/gi,'\n')
+   .replace(/\s+(?=\d{1,2}[\/.-]\d{1,2}[\/.-]\d{4}\b)/g,'\n')
+   .replace(/\s+(?=\d{4}-\d{1,2}-\d{1,2}\b)/g,'\n');
+ const ensureDate=()=>{if(currentDate)out[currentDate]??={midday:[],evening:[]}};
+ const activeMeal=()=>currentDate&&currentSlot?out[currentDate]?.[currentSlot]?.[0]:null;
+ for(const raw of normalized.split(/\r?\n/)){
+   const line=raw.trim();if(!line)continue;
+   let m=line.match(/\b(\d{4})-(\d{1,2})-(\d{1,2})\b/);
+   if(m){currentDate=`${m[1]}-${String(m[2]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`;currentSlot=null;ensureDate();continue;}
+   m=line.match(/\b(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})\b/);
+   if(m){currentDate=`${m[3]}-${String(m[2]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`;currentSlot=null;ensureDate();continue;}
+   if(!currentDate)continue;ensureDate();
+   m=line.match(/^midi\s*[:\-–—]?\s*(.+)$/i);
+   if(m?.[1]){currentSlot='midday';const n=m[1].trim();out[currentDate].midday=[{name:n,ingredients:recipes[n.toLowerCase()]||'',people:0}];continue;}
+   m=line.match(/^soir\s*[:\-–—]?\s*(.+)$/i);
+   if(m?.[1]){currentSlot='evening';const n=m[1].trim();out[currentDate].evening=[{name:n,ingredients:recipes[n.toLowerCase()]||'',people:0}];continue;}
+   m=line.match(/^(?:personnes?|convives?)\s*[:\-–—]?\s*(\d+)/i);
+   if(m&&activeMeal()){activeMeal().people=Math.max(0,parseInt(m[1],10)||0);continue;}
+   m=line.match(/^ingr[ée]dients?\s*[:\-–—]?\s*(.+)$/i);
+   if(m?.[1]&&activeMeal()){activeMeal().ingredients=m[1].trim();continue;}
+ }
+ return out;
+}
+function copyPdfExample(){
+ const t=$('#pdf-example')?.textContent||'';
+ if(navigator.clipboard?.writeText)navigator.clipboard.writeText(t).then(()=>alert('Exemple copié.')).catch(()=>fallbackCopy(t));
+ else fallbackCopy(t);
+}
+function fallbackCopy(t){
+ const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();
+ try{document.execCommand('copy');alert('Exemple copié.')}catch(e){alert('Copie automatique impossible. Sélectionnez le texte manuellement.')}
+ ta.remove();
+}
 
 function renderRecipes(){const box=$('#recipe-list');const keys=Object.keys(recipes).sort();box.innerHTML=keys.length?keys.map(k=>`<div class="recipe"><h3>🍲 ${esc(k.replace(/^./,c=>c.toUpperCase()))}</h3><p>${esc(recipes[k])}</p><button class="smallbtn" onclick="editRecipe('${k.replace(/'/g,"\\'")}')">Modifier</button></div>`).join(''):'<div class="card">Aucune recette personnelle enregistrée.</div>';}
 function editRecipe(key=''){const name=prompt('Nom de la recette :',key?key.replace(/^./,c=>c.toUpperCase()):'');if(!name)return;const ing=prompt('Ingrédients séparés par • :',key?recipes[key]||'':'');if(ing===null)return;if(key&&key!==name.toLowerCase())delete recipes[key];recipes[name.toLowerCase()]=ing.trim();localStorage.setItem(K.recipes,JSON.stringify(recipes));renderRecipes();}
@@ -210,6 +303,6 @@ function toggleCheck(key,checked){key=decodeURIComponent(key);const checks=JSON.
 function addShoppingItem(){const n=prompt('Article à ajouter :');if(!n)return;const c=JSON.parse(localStorage.getItem(K.custom)||'{}');(c[selectedShopWeek]??=[]).push(n.trim());localStorage.setItem(K.custom,JSON.stringify(c));alert('Article ajouté aux ajouts personnels.');}
 
 $('#pdf-file').addEventListener('change',e=>importPdf(e.target.files[0]));
-if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js');
+if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js?v=42');
 
 requestAnimationFrame(()=>document.querySelector('.bottom-nav button[data-target="home"]')?.classList.add('active'));

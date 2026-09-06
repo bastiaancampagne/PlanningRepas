@@ -1,0 +1,25 @@
+PlanningRepas PWA v4.3 — recettes automatiques + stock
+
+Nouveau flux :
+1. Le PDF contient seulement :
+   - la date ;
+   - Midi / Soir ;
+   - le nom du plat ;
+   - le nombre de personnes.
+2. PlanningRepas cherche d'abord une recette déjà validée dans l'application.
+3. Si aucune recette n'est connue, la PWA interroge TheMealDB.
+4. Les quantités sont recalculées selon le nombre de convives.
+5. L'écran de vérification affiche les ingrédients calculés avant validation.
+6. Une recette corrigée/validée est mémorisée pour les imports suivants.
+7. Le nouvel écran « Stock » permet d'enregistrer les produits déjà disponibles.
+8. Lors de la validation d'une semaine ou de la génération des courses :
+   - les besoins sont additionnés ;
+   - le stock disponible est déduit ;
+   - le stock restant est reporté ;
+   - seule la quantité manquante est ajoutée à la liste des courses.
+9. Une prévision du stock restant après chaque semaine est affichée.
+
+Limite :
+TheMealDB ne fournit pas systématiquement le nombre de portions d'origine.
+Les recettes trouvées en ligne sont donc proposées sur une base estimée de 4 portions
+et doivent être vérifiées avant validation.

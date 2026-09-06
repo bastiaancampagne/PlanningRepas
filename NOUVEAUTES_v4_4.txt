@@ -1,0 +1,19 @@
+PlanningRepas PWA v4.4
+
+Correction de la page « Nouveau planning » :
+- le bouton « Importer un PDF » indique désormais :
+  « Date + créneau + plat + convives » ;
+- suppression de toute mention demandant des ingrédients dans le PDF ;
+- l'exemple de texte ne contient plus d'ingrédients ;
+- ajout du déroulé complet après import :
+  recette connue -> recherche en ligne -> adaptation aux convives ->
+  vérification -> mémorisation -> calcul des besoins -> déduction du stock ->
+  liste de courses ;
+- ajout d'un rappel sur l'utilisation du stock après validation.
+
+Le fonctionnement interne reste celui de la v4.3 :
+- recherche des recettes connues ou en ligne ;
+- calcul des quantités selon les convives ;
+- validation manuelle ;
+- gestion du stock ;
+- calcul des listes de courses.

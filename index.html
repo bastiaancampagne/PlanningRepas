@@ -1,25 +1,84 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1f7a4d"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png"><link rel="stylesheet" href="styles.css?v=42"><title>PlanningRepas</title></head><body data-scene="home"><div class="app">
-<section id="home" class="screen active"><div class="hero"><img src="assets/emu_home_v5.png"><div class="hero-copy"><h1>PlanningRepas</h1><p><b>Des idées savoureuses pour chaque jour !</b></p></div></div><div class="grid"><button class="homebtn green" onclick="show('menus')">🍴 Menus<small>Planifier et gérer vos repas</small></button><button class="homebtn orange" onclick="show('courses')">🛒 Courses<small>Vos listes de courses par semaine</small></button><button class="homebtn blue" onclick="newPlanning()">📄 Nouveau planning<small>Saisie manuelle ou import PDF texte</small></button><button class="homebtn purple" onclick="show('recipes')">📚 Mes recettes<small>Votre bibliothèque d’ingrédients</small></button></div><div class="quote">« Manger bien, c’est se faire du bien ! » ❤️</div><div class="sig">Bastiaan (31) TM</div></section>
-<section id="menus" class="screen"><div class="topbar"><button onclick="show('home')">⌂ Accueil</button><h1>🍴 Menus</h1></div><div class="mascot"><img src="assets/emu_menus_v5.png"><p>Une semaine gourmande vous attend !</p></div><div class="nav"><button id="prev-week" onclick="changeWeek(-1)">‹</button><div id="week-label" class="label"></div><button id="next-week" onclick="changeWeek(1)">›</button></div><div class="row"><button class="smallbtn secondary" onclick="undo()">↶ Annuler</button><button class="smallbtn secondary" onclick="resetPlan()">Réinitialiser</button></div><div id="menus-list"></div></section>
-<section id="courses" class="screen"><div class="topbar"><button onclick="show('home')">⌂ Accueil</button><h1>🛒 Courses</h1></div><div class="mascot"><img src="assets/emu_courses_v5.png"><p>De bonnes courses pour de bons repas !</p></div><div class="nav"><button id="shop-prev" onclick="changeShopWeek(-1)">‹</button><div id="shop-week-label" class="label">Semaine 1</div><button id="shop-next" onclick="changeShopWeek(1)">›</button></div><div id="shop-progress" class="progress"></div><div id="shop-list"></div><div class="row"><button class="smallbtn primary" onclick="generateShoppingAsk()">🧺 Générer / régénérer</button><button class="smallbtn secondary" onclick="addShoppingItem()">＋ Ajouter un article</button></div></section>
-<section id="newplan" class="screen"><div class="topbar"><button onclick="show('home')">⌂ Accueil</button><h1>📄 Nouveau planning</h1></div><div class="mascot"><img src="assets/emu_move_v5.png"><p>Un nouveau planning ? C’est parti !</p></div><div class="grid"><button class="homebtn green" onclick="manualSetup()">📝 Saisie manuelle<small>Jusqu’à 4 semaines</small></button><button class="homebtn blue" onclick="document.getElementById('pdf-file').click()">📘 Importer un PDF<small>Repas + convives + ingrédients</small></button></div><div id="pdf-progress" class="progress"></div><input id="pdf-file" type="file" accept="application/pdf" hidden><div class="card"><b>Import PDF amélioré :</b> le document peut maintenant renseigner automatiquement la date, le repas, le nombre de personnes et les ingrédients. Les ingrédients importés alimentent également la bibliothèque de recettes et pourront être utilisés pour générer les listes de courses.<br><br><b>Important :</b> le PDF doit contenir du vrai texte sélectionnable. Les scans ou photos ne sont pas pris en charge.</div><div class="card"><div class="example-head"><b>📋 Exemple de texte à mettre dans le PDF</b><button class="smallbtn secondary" onclick="copyPdfExample()">Copier</button></div><pre id="pdf-example" class="pdf-example">07/09/2026
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1f7a4d"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png"><link rel="stylesheet" href="styles.css?v=44"><title>PlanningRepas</title></head><body data-scene="home"><div class="app">
+<section id="home" class="screen active"><div class="hero"><img src="assets/emu_home_v5.png"><div class="hero-copy"><h1>PlanningRepas</h1><p><b>Des idées savoureuses pour chaque jour !</b></p></div></div><div class="grid"><button class="homebtn green" onclick="show('menus')">🍴 Menus<small>Planifier et gérer vos repas</small></button><button class="homebtn orange" onclick="show('courses')">🛒 Courses<small>Vos listes de courses par semaine</small></button><button class="homebtn blue" onclick="newPlanning()">📄 Nouveau planning<small>Saisie manuelle ou import PDF texte</small></button><button class="homebtn purple" onclick="show('recipes')">📚 Mes recettes<small>Votre bibliothèque d’ingrédients</small></button><button class="homebtn mint" onclick="show('stock')">📦 Stock<small>Placards, réfrigérateur et congélateur</small></button></div><div class="quote">« Manger bien, c’est se faire du bien ! » ❤️</div><div class="sig">Bastiaan (31) TM</div></section>
+<section id="menus" class="screen"><div class="topbar"><button onclick="show('home')">⌂ Accueil</button><h1>🍴 Menus</h1></div><div class="mascot"><img src="assets/emu_menus_v5.png"><p>Une semaine gourmande vous attend !</p></div><div class="nav"><button id="prev-week" onclick="changeWeek(-1)">‹</button><div id="week-label" class="label"></div><button id="next-week" onclick="changeWeek(1)">›</button></div><div class="row"><button class="smallbtn secondary" onclick="undo()">↶ Annuler</button><button class="smallbtn secondary" onclick="resetPlan()">Réinitialiser</button></div><div class="row"><button class="smallbtn primary" onclick="validateCurrentWeek()">✅ Valider la semaine & calculer les courses</button></div><div id="menus-list"></div></section>
+<section id="courses" class="screen"><div class="topbar"><button onclick="show('home')">⌂ Accueil</button><h1>🛒 Courses</h1></div><div class="mascot"><img src="assets/emu_courses_v5.png"><p>De bonnes courses pour de bons repas !</p></div><div class="nav"><button id="shop-prev" onclick="changeShopWeek(-1)">‹</button><div id="shop-week-label" class="label">Semaine 1</div><button id="shop-next" onclick="changeShopWeek(1)">›</button></div><div id="shop-progress" class="progress"></div><div id="shop-list"></div><div class="row"><button class="smallbtn primary" onclick="generateShoppingAsk()">🧺 Générer / régénérer</button><button class="smallbtn secondary" onclick="addShoppingItem()">＋ Ajouter un article</button></div><div class="row"><button class="smallbtn secondary" onclick="show('stock')">📦 Voir / modifier le stock</button></div></section>
+<section id="newplan" class="screen">
+  <div class="topbar">
+    <button onclick="show('home')">⌂ Accueil</button>
+    <h1>📄 Nouveau planning</h1>
+  </div>
+
+  <div class="mascot">
+    <img src="assets/emu_move_v5.png">
+    <p>Un nouveau planning ? C’est parti !</p>
+  </div>
+
+  <div class="grid">
+    <button class="homebtn green" onclick="manualSetup()">
+      📝 Saisie manuelle
+      <small>Jusqu’à 4 semaines</small>
+    </button>
+
+    <button class="homebtn blue" onclick="document.getElementById('pdf-file').click()">
+      📘 Importer un PDF
+      <small>Date + créneau + plat + convives</small>
+    </button>
+  </div>
+
+  <div id="pdf-progress" class="progress"></div>
+  <input id="pdf-file" type="file" accept="application/pdf" hidden>
+
+  <div class="card">
+    <b>Import PDF simplifié :</b>
+    le PDF doit uniquement contenir la <b>date</b>, le créneau <b>Midi</b> ou <b>Soir</b>,
+    le <b>nom du plat</b> et le <b>nombre de personnes</b>.
+    <br><br>
+    Après l’import, PlanningRepas :
+    <br>1. recherche d’abord une recette déjà enregistrée ou validée ;
+    <br>2. si nécessaire, recherche une recette en ligne ;
+    <br>3. adapte les quantités au nombre de convives ;
+    <br>4. affiche les ingrédients calculés pour vérification ;
+    <br>5. mémorise la recette après votre validation ;
+    <br>6. additionne les besoins de la semaine ;
+    <br>7. déduit le stock disponible ;
+    <br>8. prépare la liste de courses avec uniquement ce qui manque.
+    <br><br>
+    <b>Important :</b> le PDF doit contenir du vrai texte sélectionnable.
+    Les scans ou photos ne sont pas pris en charge.
+  </div>
+
+  <div class="card">
+    <div class="example-head">
+      <b>📋 Exemple de texte à mettre dans le PDF</b>
+      <button class="smallbtn secondary" onclick="copyPdfExample()">Copier</button>
+    </div>
+    <pre id="pdf-example" class="pdf-example">07/09/2026
 
 Midi : Poulet rôti, pommes de terre et carottes
 Personnes : 6
-Ingrédients : poulet 1,5 kg ; pommes de terre 1,5 kg ; carottes 800 g
 
 Soir : Soupe de légumes et tartines au fromage
-Personnes : 5
-Ingrédients : légumes 1 kg ; bouillon 2 cubes ; pain 10 tranches ; fromage 250 g</pre></div></section>
+Personnes : 5</pre>
+  </div>
+
+  <div class="card">
+    <b>💡 Après validation</b><br>
+    Vous pourrez utiliser <b>📦 Stock</b> pour indiquer ce que vous avez déjà.
+    Le bouton <b>✅ Valider la semaine & calculer les courses</b> comparera ensuite
+    les besoins aux quantités en stock et calculera automatiquement ce qu’il reste à acheter.
+  </div>
+</section>
 <section id="manual" class="screen"><div class="topbar"><button onclick="show('newplan')">‹ Retour</button><h1>📝 Saisie manuelle</h1></div><div class="mascot"><img src="assets/emu_move_v5.png"><p>À vos recettes !</p></div><div id="manual-list"></div><button class="homebtn green" onclick="verifyManual()">✅ Vérifier le planning<small>Aucune modification avant confirmation</small></button></section>
 <section id="verify" class="screen"><div class="topbar"><button onclick="show('newplan')">‹ Retour</button><h1>✅ Vérification</h1></div><div class="mascot"><img src="assets/emu_move_v5.png"><p>On vérifie avant de mettre la table !</p></div><div id="verify-status" class="card"></div><div id="verify-list"></div><button class="homebtn green" onclick="confirmPending()">✔ Confirmer ce planning<small>Remplacer le planning actuel</small></button></section>
+<section id="stock" class="screen"><div class="topbar"><button onclick="show('home')">⌂ Accueil</button><h1>📦 Stock</h1></div><div class="mascot"><img src="assets/emu_courses_v5.png"><p>On utilise d’abord ce que vous avez déjà !</p></div><div class="card"><b>Stock disponible</b><br><span class="muted">Indiquez ici ce que vous avez dans les placards, le réfrigérateur et le congélateur. Lors de la génération des courses, PlanningRepas déduit automatiquement ce stock des besoins.</span></div><div id="stock-list"></div><div class="row"><button class="smallbtn primary" onclick="editStockItem()">＋ Ajouter au stock</button><button class="smallbtn secondary" onclick="clearStock()">🗑 Vider le stock</button></div><div id="stock-forecast"></div></section>
 <section id="recipes" class="screen"><div class="topbar"><button onclick="show('home')">⌂ Accueil</button><h1>📚 Mes recettes</h1></div><div class="mascot"><img src="assets/emu_day_v5.png"><p>De nouvelles idées à savourer !</p></div><div id="recipe-list"></div><button class="homebtn green" onclick="editRecipe()">＋ Ajouter une recette<small>Nom + ingrédients</small></button></section>
 </div>
 <nav class="bottom-nav" aria-label="Navigation principale">
   <button data-target="home" onclick="show('home')" title="Accueil"><span>🏠</span><small>Accueil</small></button>
   <button data-target="menus" onclick="show('menus')" title="Menus"><span>🍴</span><small>Menus</small></button>
   <button data-target="courses" onclick="show('courses')" title="Courses"><span>🛒</span><small>Courses</small></button>
+  <button data-target="stock" onclick="show('stock')" title="Stock"><span>📦</span><small>Stock</small></button>
   <button data-target="recipes" onclick="show('recipes')" title="Recettes"><span>📚</span><small>Recettes</small></button>
   <button data-target="newplan" onclick="show('newplan')" title="Nouveau planning"><span>✍️</span><small>Nouveau</small></button>
 </nav>
-<footer class="app-signature">Bastiaan (31) TM</footer><div id="modal" class="modal" onclick="if(event.target.id==='modal')closeModal()"><div id="sheet" class="sheet"></div></div><script src="app.js?v=42"></script></body></html>
+<footer class="app-signature">Bastiaan (31) TM</footer><div id="modal" class="modal" onclick="if(event.target.id==='modal')closeModal()"><div id="sheet" class="sheet"></div></div><script src="app.js?v=44"></script></body></html>

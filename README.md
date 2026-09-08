@@ -1,27 +1,16 @@
-# PlanningRepas PWA v4
+# PointJour — PWA V14 candidate fonctionnelle
 
-Version modernisée du PlanningRepas PWA v3 fourni.
+Cette version privilégie la validation fonctionnelle avant l’habillage final.
 
-Déploiement : décompresser puis envoyer le CONTENU du dossier à la racine du dépôt GitHub Pages.
-Après déploiement, faire une fois **Ctrl+F5** pour forcer le nouveau cache.
+## Nouveautés
+- jusqu’à 30 sources personnalisables : ajout, modification, activation/désactivation, suppression, test et restauration des valeurs par défaut ;
+- association d’une source à une ou plusieurs veilles ;
+- page **Recherche Web** à la place de **Experts / Web** ;
+- recherche construite avec la veille, ses sous-thèmes et les domaines des sources actives ;
+- archives de résultats cliquables avec date, titre, thème et source ;
+- filtres d’archives Privé / Travail / Tout et par thème ;
+- conservation du double compte Google et de la session navigateur ;
+- fonds neutres dans cette candidate afin d’éviter toute fausse interface incrustée dans une image.
 
-La maquette de référence est incluse dans `maquette/PlanningRepas_maquette_v4.png`.
-
-
-## Version 4.3 — import simplifié et stock
-
-Le PDF d'import peut désormais se limiter à :
-
-07/09/2026
-
-Midi : Poulet rôti, pommes de terre et carottes
-Personnes : 6
-
-Soir : Soupe de légumes et tartines au fromage
-Personnes : 5
-
-L'application recherche ensuite la recette, adapte les quantités, demande validation,
-puis compare les besoins au stock saisi dans la page « Stock » avant d'établir la liste de courses.
-
-Les recherches de recettes inconnues utilisent TheMealDB. Les résultats en ligne sont à vérifier,
-notamment parce que le nombre de portions d'origine n'est pas toujours fourni.
+## Installation GitHub Pages
+Téléverser le contenu du ZIP à la racine du dépôt PointJour. Après déploiement, faire Ctrl+F5 si une ancienne version reste en cache.

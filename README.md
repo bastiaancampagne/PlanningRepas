@@ -1,25 +1,27 @@
-# PointJour — FINALE PROPRE
+# PlanningRepas PWA v4
 
-Version reconstruite visuellement, sans réutiliser les anciens décors V12/V13/V14/V15.
+Version modernisée du PlanningRepas PWA v3 fourni.
 
-## Structure validée
-- Brief = page principale.
-- Navigation : Brief · Veilles · Recherche · Archives · Plus.
-- Gmail : « Voir les messages ».
-- Agenda : « Voir les événements ».
-- Veilles : « Lancer la recherche ».
-- Recherche Web : bouton « Modifier » dans chaque bloc.
-- Archives : Tous les thèmes · Paie · Auto · Cuisine, puis veilles personnalisées.
-- Sources : ajout, modification, test, activation/désactivation, suppression et restauration.
-- Comptes : Privé / Travail.
-- Jusqu'à 20 sous-thèmes par veille et 30 sources.
+Déploiement : décompresser puis envoyer le CONTENU du dossier à la racine du dépôt GitHub Pages.
+Après déploiement, faire une fois **Ctrl+F5** pour forcer le nouveau cache.
 
-## Refonte visuelle
-- Barre de navigation bleu nuit inspirée de VeilleJurSoc.
-- Boutons bleu, vert, orange et violet.
-- Décors propres et distincts selon les pages/états.
-- Aucun faux bouton, aucune fausse interface, aucun texte incrusté dans les fonds.
-- Aucun ancien asset `emu-*` inclus.
+La maquette de référence est incluse dans `maquette/PlanningRepas_maquette_v4.png`.
 
-## Cache
-Service Worker : `pointjour-finale-propre-2026-09-09`.
+
+## Version 4.3 — import simplifié et stock
+
+Le PDF d'import peut désormais se limiter à :
+
+07/09/2026
+
+Midi : Poulet rôti, pommes de terre et carottes
+Personnes : 6
+
+Soir : Soupe de légumes et tartines au fromage
+Personnes : 5
+
+L'application recherche ensuite la recette, adapte les quantités, demande validation,
+puis compare les besoins au stock saisi dans la page « Stock » avant d'établir la liste de courses.
+
+Les recherches de recettes inconnues utilisent TheMealDB. Les résultats en ligne sont à vérifier,
+notamment parce que le nombre de portions d'origine n'est pas toujours fourni.

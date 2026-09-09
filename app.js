@@ -1,188 +1,543 @@
-const CFG=window.POINTJOUR_CONFIG||{};
-const SCOPES='https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar.readonly';
-const $=s=>document.querySelector(s);
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-const PAYROLL_SOURCES=[
- ['BOSS','https://boss.gouv.fr/'],['URSSAF','https://www.urssaf.fr/'],['Net-entreprises','https://www.net-entreprises.fr/'],
- ['Légifrance','https://www.legifrance.gouv.fr/'],['Service-Public Pro','https://entreprendre.service-public.fr/'],
- ['Assurance Maladie','https://www.ameli.fr/entreprise'],['France Travail','https://www.francetravail.fr/employeur/'],
- ['Agirc-Arrco','https://www.agirc-arrco.fr/entreprises/'],['Ministère du Travail','https://travail-emploi.gouv.fr/'],
- ['Légisocial','https://www.legisocial.fr/actualites-sociales/'],['RF Paye','https://www.revue-fiduciaire.com/'],
- ['Éditions Tissot','https://www.editions-tissot.fr/actualite/droit-du-travail']
-];
-const TRUSTED={
- Auto:['service-public.fr','securite-routiere.gouv.fr','economie.gouv.fr','ademe.fr','largus.fr','caradisiac.com','quechoisir.org'],
- Cuisine:['mangerbouger.fr','anses.fr','750g.com','marmiton.org','cuisineaz.com']
-};
+const SEED={"2026-09-03": {"midday": [{"name": "Dos de cabillaud et gratin de brocoli", "ingredients": "3 dos de cabillaud • gratin de brocoli 550 g • citron 1", "people": 2}], "evening": [{"name": "Radiatori aux lardons, petits pois et crème", "ingredients": "radiatori 600 g • lardons 450 g • petits pois 950 g • crème 35 cl", "people": 7}]}, "2026-09-04": {"midday": [{"name": "Omelette paysanne aux légumes + salade", "ingredients": "œufs 4 • légumes 350 g • fromage 50 g • 1/2 salade", "people": 2}], "evening": [{"name": "Chili con carne + riz", "ingredients": "bœuf haché 500 g • haricots rouges 3 × 400 g • riz 500 g • tomate 400 g • oignons 2", "people": 6}]}, "2026-09-05": {"midday": [{"name": "Couscous au poulet et légumes", "ingredients": "pilons 800 g • légumes à couscous 2 kg • semoule 500 g • bouillon 1,5 L", "people": 6}], "evening": [{"name": "McDonald’s", "ingredients": "aucun ingrédient à prévoir", "people": 6}]}, "2026-09-06": {"midday": [{"name": "Boudin noir aux oignons et lentilles", "ingredients": "boudin 1,6 kg • lentilles 2 × 800 g • oignons 500 g", "people": 6}], "evening": [{"name": "Quiche jambon-oignons + salade", "ingredients": "pâte brisée 1 • jambon 6 tranches • oignons 3 • œufs 4 • crème 20 cl • fromage 150 g • salade 1", "people": 6}]}, "2026-09-07": {"midday": [{"name": "Nuggets et poisson pané, légumes et céréales", "ingredients": "nuggets 500 g • poisson pané 3 pièces • légumes-céréales 500 g", "people": 3}], "evening": [{"name": "Rigatoni au thon, tomate et courgettes", "ingredients": "rigatoni 900 g • thon 4 boîtes • sauce tomate 500 g • courgettes 600 g", "people": 7}]}, "2026-09-08": {"midday": [{"name": "Riz cantonais aux œufs, jambon et petits pois", "ingredients": "riz 250 g • œufs 3 • jambon 3 tranches • petits pois 400 g", "people": 3}], "evening": [{"name": "Poulet moutarde, pommes de terre et carottes", "ingredients": "pilons 800 g • pommes de terre 2 kg • carottes 1,2 kg • moutarde 150 g • crème 20 cl", "people": 6}]}, "2026-09-09": {"midday": [{"name": "Lasagnes froides à l’italienne", "ingredients": "lasagnes 250 g • stracciatella 250 g • pesto 100 g • tomates 600 g • roquette 125 g • jambon cru 150 g", "people": 3}], "evening": [{"name": "Gratin de pâtes au thon et à la tomate", "ingredients": "macaroni 600 g • thon 4 boîtes • tomate 500 g • crème 25 cl • fromage 300 g", "people": 7}]}, "2026-09-10": {"midday": [{"name": "Grillade porc-chorizo et gratin de chou-fleur", "ingredients": "côtes de porc 4 • steaks de chorizo 4 • gratin de chou-fleur 650 g", "people": 5}], "evening": [{"name": "Quiche poireaux-lardons + salade", "ingredients": "pâte brisée 1 • poireaux 1,2 kg • lardons 350 g • œufs 4 • crème 20 cl • fromage 150 g • salade 1", "people": 6}]}, "2026-09-11": {"midday": [{"name": "Poulet façon basquaise + riz", "ingredients": "hauts de cuisse 700 g • riz 350 g • poivrons 400 g • tomate 300 g • oignons 2", "people": 4}], "evening": [{"name": "Pizza maison poulet-fromage-poivrons", "ingredients": "farine 750 g • levure 1 sachet • poulet 500 g • fromage 400 g • poivrons 300 g • sauce tomate 200 g", "people": 6}]}, "2026-09-12": {"midday": [{"name": "Spaghetti bolognaise bœuf-lentilles", "ingredients": "spaghetti 750 g • steaks hachés 5 • lentilles corail 250 g • sauce bolognaise 400 g • tomate 400 g • oignons 2", "people": 6}], "evening": [{"name": "Saucisses, purée de pommes de terre et haricots verts", "ingredients": "saucisses 8 • pommes de terre 3 kg • lait 50 cl • beurre 80 g • haricots verts 1,2 kg", "people": 6}]}, "2026-09-13": {"midday": [{"name": "Salade de pâtes, œufs, tomates, maïs et jambon", "ingredients": "pâtes 650 g • œufs 5 • tomates 850 g • maïs 2 boîtes • jambon 5 tranches", "people": 5}], "evening": [{"name": "Hauts de cuisse rôtis et gratin de chou-fleur", "ingredients": "hauts de cuisse 1,2 kg • gratin de chou-fleur 950 g", "people": 7}]}, "2026-09-14": {"midday": [{"name": "Omelette jambon-fromage + salade verte", "ingredients": "œufs 4 • jambon 2 tranches • fromage 100 g • 1/2 salade", "people": 2}], "evening": [{"name": "Penne au poulet, petits pois et crème", "ingredients": "penne 750 g • poulet 500 g • petits pois 600 g • crème 30 cl", "people": 6}]}, "2026-09-15": {"midday": [{"name": "Aucun repas prévu", "ingredients": "repas non préparé • steaks de chorizo et purée de carottes conservés", "people": 0}], "evening": [{"name": "Lasagnes bolognaise bœuf-lentilles", "ingredients": "lasagnes 500 g • steaks hachés 5 • lentilles corail 250 g • sauce bolognaise 400 g • tomate 400 g • béchamel 1 L • fromage 300 g", "people": 6}]}, "2026-09-16": {"midday": [{"name": "Saucisses à la tomate, riz et poivrons", "ingredients": "saucisses 800 g • riz 350 g • poivrons 700 g • sauce tomate 300 g • oignon 1", "people": 4}], "evening": [{"name": "Fusilli au thon, tomate et courgettes", "ingredients": "fusilli 900 g • thon 4 boîtes • sauce tomate 500 g • courgettes 600 g", "people": 7}]}, "2026-09-17": {"midday": [{"name": "Quiche jambon-oignons + salade", "ingredients": "pâte brisée 1 • jambon 2 tranches • oignon 1 • œufs 2 • crème 10 cl • fromage 50 g • 1/2 salade", "people": 2}], "evening": [{"name": "Gratin de pommes de terre, courgettes et bœuf haché", "ingredients": "pommes de terre 3 kg • courgettes 1,75 kg • bœuf haché 1,2 kg • crème 50 cl • fromage 300 g • oignons 3", "people": 7}]}, "2026-09-18": {"midday": [{"name": "Radiatori gratinés jambon-fromage", "ingredients": "radiatori 250 g • jambon 3 tranches • crème 10 cl • fromage 100 g", "people": 2}], "evening": [{"name": "Paella au poulet + riz", "ingredients": "pilons 800 g • riz 600 g • poivrons 500 g • petits pois 400 g • tomate 400 g • bouillon 1,2 L", "people": 6}]}, "2026-09-19": {"midday": [{"name": "Porc à la tomate et aux poivrons + riz", "ingredients": "porc 1,2 kg • riz 500 g • tomate 400 g • poivrons 800 g • oignons 2", "people": 6}], "evening": [{"name": "Pizza maison jambon-champignons-fromage", "ingredients": "farine 750 g • levure 1 sachet • jambon 8 tranches • champignons 500 g • fromage 400 g • sauce tomate 200 g", "people": 6}]}, "2026-09-20": {"midday": [{"name": "Crêpes salées jambon-fromage + crudités", "ingredients": "farine 500 g • œufs 6 • lait 1 L • jambon 8 tranches • fromage 300 g • crudités 1,5 kg", "people": 6}], "evening": [{"name": "Poulet au paprika, pommes de terre et carottes", "ingredients": "poulet 1,2 kg • pommes de terre 2,5 kg • carottes 1,2 kg • paprika 2 c. à soupe", "people": 6}]}, "2026-09-21": {"midday": [{"name": "Hachis parmentier bœuf-lentilles", "ingredients": "pommes de terre 1,7 kg • bœuf haché 500 g • lentilles 250 g • lait 35 cl • beurre 50 g • oignons 2", "people": 4}], "evening": [{"name": "Vesuvio au thon, tomate et petits pois", "ingredients": "vesuvio 750 g • thon 3 boîtes • tomate 400 g • petits pois 600 g", "people": 6}]}, "2026-09-22": {"midday": [{"name": "Colin, pommes de terre vapeur et carottes", "ingredients": "3 dos de cabillaud • pommes de terre 700 g • carottes 400 g • citron 1", "people": 2}], "evening": [{"name": "Mafaldelle jambon, petits pois et crème", "ingredients": "mafaldelle 900 g • jambon 10 tranches • petits pois 700 g • crème 35 cl", "people": 7}]}, "2026-09-23": {"midday": [{"name": "Poulet au curry, riz et légumes", "ingredients": "poulet 800 g • riz 350 g • légumes 800 g • crème 20 cl • curry 1,5 c. à soupe", "people": 4}], "evening": [{"name": "Omelette paysanne aux légumes + salade", "ingredients": "œufs 12 • légumes 1 kg • fromage 150 g • salade 1", "people": 6}]}, "2026-09-24": {"midday": [{"name": "Carbonnade flamande", "ingredients": "paleron 1,5 kg • bière brune 1,5 L • pain d’épices 300 g • oignons 600 g • moutarde 100 g", "people": 6}], "evening": [{"name": "Quiche poireaux-lardons + salade", "ingredients": "pâte brisée 1 • poireaux 1,2 kg • lardons 350 g • œufs 4 • crème 20 cl • fromage 150 g • salade 1", "people": 6}]}, "2026-09-25": {"midday": [{"name": "Couscous au poulet et légumes", "ingredients": "poulet 550 g • légumes à couscous 1,35 kg • semoule 350 g • bouillon 1 L", "people": 4}], "evening": [{"name": "Spaghetti poulet-tomate", "ingredients": "spaghetti 750 g • poulet 1,2 kg • sauce tomate 800 g • oignons 2", "people": 6}]}, "2026-09-26": {"midday": [{"name": "Chili con carne + riz", "ingredients": "bœuf haché 500 g • haricots rouges 3 × 400 g • riz 500 g • tomate 400 g • oignons 2", "people": 6}], "evening": [{"name": "Pizza maison poulet-fromage-poivrons", "ingredients": "farine 750 g • levure 1 sachet • poulet 500 g • fromage 400 g • poivrons 300 g • sauce tomate 200 g", "people": 6}]}, "2026-09-27": {"midday": [{"name": "Rôti de porc, pommes de terre au four et carottes", "ingredients": "rôti de porc 1,2 kg • pommes de terre 2,5 kg • carottes 1,5 kg", "people": 6}], "evening": [{"name": "Riz cantonais aux œufs, jambon et petits pois", "ingredients": "riz 500 g • œufs 6 • jambon 6 tranches • petits pois 800 g", "people": 6}]}, "2026-09-28": {"midday": [{"name": "Omelette jambon-fromage + salade verte", "ingredients": "œufs 4 • jambon 2 tranches • fromage 100 g • 1/2 salade", "people": 2}], "evening": [{"name": "Fusilli bolognaise aux légumes", "ingredients": "fusilli 750 g • bœuf haché 800 g • légumes 1 kg • sauce tomate 800 g", "people": 6}]}, "2026-09-29": {"midday": [{"name": "Poisson blanc, semoule et ratatouille", "ingredients": "poisson blanc 1,2 kg • semoule 600 g • ratatouille 1,2 kg", "people": 6}], "evening": [{"name": "Spaghetti carbonara", "ingredients": "spaghetti 750 g • lardons 400 g • crème 30 cl • œufs 4 • fromage 200 g", "people": 6}]}, "2026-09-30": {"midday": [{"name": "Poulet façon basquaise + riz", "ingredients": "hauts de cuisse 850 g • riz 450 g • poivrons 500 g • tomate 350 g • oignons 2", "people": 5}], "evening": [{"name": "Macaroni gratinés jambon-fromage", "ingredients": "macaroni 750 g • jambon 8 tranches • crème 30 cl • fromage 300 g", "people": 6}]}};
+const K={menus:'pr6_menus',recipes:'pr6_recipes',recipeMeta:'pr6_recipe_meta',shopping:'pr6_shopping',checks:'pr6_checks',custom:'pr6_custom',stock:'pr6_stock',forecast:'pr6_stock_forecast'};
+let menus=JSON.parse(localStorage.getItem(K.menus)||'null')||structuredClone(SEED);
+let recipes=JSON.parse(localStorage.getItem(K.recipes)||'{}');
+let shopping=JSON.parse(localStorage.getItem(K.shopping)||'{}');
+let recipeMeta=JSON.parse(localStorage.getItem(K.recipeMeta)||'{}');
+let stock=JSON.parse(localStorage.getItem(K.stock)||'[]');
+let stockForecast=JSON.parse(localStorage.getItem(K.forecast)||'{}');
+let selectedWeek=0,selectedShopWeek=1,undoStack=[],pending={};
 
-const DEFAULT_SOURCES=[
- ...PAYROLL_SOURCES.map(([name,url])=>({name,url,active:true,themes:['Paie']})),
- {name:'Service-Public',url:'https://www.service-public.fr/',active:true,themes:['Auto']},
- {name:'Sécurité routière',url:'https://www.securite-routiere.gouv.fr/',active:true,themes:['Auto']},
- {name:'ADEME',url:'https://www.ademe.fr/',active:true,themes:['Auto']},
- {name:'L’Argus',url:'https://www.largus.fr/',active:true,themes:['Auto']},
- {name:'Que Choisir',url:'https://www.quechoisir.org/',active:true,themes:['Auto']},
- {name:'Manger Bouger',url:'https://www.mangerbouger.fr/',active:true,themes:['Cuisine']},
- {name:'ANSES',url:'https://www.anses.fr/',active:true,themes:['Cuisine']},
- {name:'750g',url:'https://www.750g.com/',active:true,themes:['Cuisine']},
- {name:'Marmiton',url:'https://www.marmiton.org/',active:true,themes:['Cuisine']},
- {name:'CuisineAZ',url:'https://www.cuisineaz.com/',active:true,themes:['Cuisine']}
-].slice(0,30);
-function migrateSources(v){return (Array.isArray(v)&&v.length?v:DEFAULT_SOURCES).slice(0,30).map(x=>({name:String(x.name||'Source'),url:String(x.url||''),active:x.active!==false,themes:Array.isArray(x.themes)?x.themes:[]}))}
-function migrateArchive(v){const out=[];(Array.isArray(v)?v:[]).forEach(x=>{if(x&&x.url)out.push(x);else if(Array.isArray(x?.news))x.news.forEach(a=>a?.url&&out.push({date:x.date,title:a.title||'Article',url:a.url,source:a.source||'Source',theme:'Paie',scope:'work'}))});return out.slice(0,500)}
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const save=()=>localStorage.setItem(K.menus,JSON.stringify(menus));
+const dates=()=>Object.keys(menus).sort();
+const parseDate=s=>new Date(s+'T12:00:00');
+const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const fr=d=>d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+const short=d=>d.toLocaleDateString('fr-FR',{day:'numeric',month:'long'});
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 
-const defaults=[
- {name:'Paie',active:true,spaces:['work'],subs:['DSN','PAS','SMIC','PMSS','IJSS','Cotisations','Congés','Ruptures','Net social','Heures supplémentaires']},
- {name:'Auto',active:true,spaces:['private'],subs:['Achat','Entretien','Réparation','Contrôle technique','Assurance','Pneus','Carburant','Rappels constructeur']},
- {name:'Cuisine',active:true,spaces:['private'],subs:['Asiatique','Desserts','Grillades','Économique','Rapide','Four']}
-];
-const load=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}};
-const save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
-function migrateWatches(ws){
- const raw=Array.isArray(ws)?ws:[];
- const normalized=raw.map(w=>({...w,active:w.active!==false,subs:Array.isArray(w.subs)?w.subs.slice(0,20):[],spaces:Array.isArray(w.spaces)&&w.spaces.length?w.spaces:(String(w.name).toLowerCase()==='paie'?['work']:['private'])}));
- const names=new Set(normalized.map(w=>String(w.name||'').toLowerCase()));
- defaults.forEach(d=>{if(!names.has(d.name.toLowerCase()))normalized.push({...d,subs:[...d.subs],spaces:[...d.spaces]})});
- return normalized;
+let menuAutoCenter=true;
+function show(id){
+  $$('.screen').forEach(x=>x.classList.remove('active'));
+  $('#'+id).classList.add('active');
+  document.body.dataset.scene=id;
+  document.querySelectorAll('.bottom-nav button').forEach(
+    b=>b.classList.toggle('active', b.dataset.target===id)
+  );
+  window.scrollTo(0,0);
+  if(id==='menus'){menuAutoCenter=true;renderMenus();}
+  if(id==='courses')renderShopping();
+  if(id==='recipes')renderRecipes();
+  if(id==='stock')renderStock();
 }
-const emptyAccount=()=>({token:null,email:'',messages:[],events:[],expiresAt:0});
-const sessionLoad=(k,d)=>{try{return JSON.parse(sessionStorage.getItem(k))??d}catch{return d}};
-const sessionSave=(k,v)=>{try{sessionStorage.setItem(k,JSON.stringify(v))}catch{}};
-const restored=sessionLoad('pj_session',null);
-function validRestoredAccount(a){return a&&a.token&&Number(a.expiresAt)>Date.now()+60000?{...emptyAccount(),...a}:emptyAccount()}
-const state={page:restored?.page||'choose',sessionReady:!!restored?.sessionReady,chosen:restored?.chosen||{private:false,work:false},accounts:{private:validRestoredAccount(restored?.accounts?.private),work:validRestoredAccount(restored?.accounts?.work)},news:[],watches:migrateWatches(load('pj_watches',defaults)),archive:migrateArchive(load('pj_archive',[])),sources:migrateSources(load('pj_sources',DEFAULT_SOURCES)),sourceEdit:-1,archiveTheme:'all',selected:Number.isInteger(restored?.selected)?restored.selected:0,tab:restored?.tab||'today',scope:restored?.scope||'all',error:'',loading:false,pendingAccount:'private'};
-function persistSession(){sessionSave('pj_session',{page:state.page,sessionReady:state.sessionReady,chosen:state.chosen,accounts:state.accounts,selected:state.selected,tab:state.tab,scope:state.scope})}
+function snap(){undoStack.push(JSON.stringify(menus));if(undoStack.length>20)undoStack.shift();}
+function undo(){if(!undoStack.length)return alert('Rien à annuler.');menus=JSON.parse(undoStack.pop());save();renderMenus();}
+function ensure(date){if(!menus[date])menus[date]={midday:[],evening:[]};}
 
-save('pj_watches',state.watches);
-let tokenClient=null;
 
-const labels={private:'🏠 Privé',work:'💼 Travail',all:'Tout'};
-const toast=m=>{const t=$('#toast');if(!t)return;t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)};
-const configured=()=>CFG.GOOGLE_CLIENT_ID&&!CFG.GOOGLE_CLIENT_ID.startsWith('REMPLACEZ_');
-const connectedKeys=()=>['private','work'].filter(k=>state.accounts[k].token);
-const hasAccount=()=>connectedKeys().length>0;
-function setPage(p){state.page=p;persistSession();$('#nav')?.classList.toggle('hidden',!state.sessionReady);document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===p));render();scrollTo(0,0)}
-function scene(title,caption){return `<section class="scene"><div class="scene-copy"><h1>${title}</h1><p>${caption}</p><span>☕ Un bon café, les bonnes infos, une journée bien organisée !</span></div></section>`}
-function topItems(title,caption){return scene(title,caption)}
-
-function nextChosenMissing(){return chosenKeys().find(k=>!state.accounts[k].token)||null}
-function finishSession(){state.sessionReady=true;state.scope=state.chosen.private&&state.chosen.work?'all':(state.chosen.private?'private':'work');state.page='brief';persistSession();render()}
-function initGoogle(){
- if(!configured()||!window.google?.accounts?.oauth2)return false;
- tokenClient=google.accounts.oauth2.initTokenClient({client_id:CFG.GOOGLE_CLIENT_ID,scope:SCOPES,callback:async r=>{
-  if(r.error){state.error=r.error;render();return}
-  const key=state.pendingAccount||'private';
-  state.accounts[key].token=r.access_token;
-  state.accounts[key].expiresAt=Date.now()+((Number(r.expires_in)||3600)*1000);
-  persistSession();
-  state.loading=true;render();
-  try{await Promise.all([loadGoogleAccount(key),loadNews()]);snapshot();state.error=''}catch(e){state.error=e.message}
-  state.loading=false;
-  const next=nextChosenMissing();
-  persistSession();
-  if(next){state.page='signin';persistSession();render()}
-  else finishSession();
- }});return true;
+function normKey(s){
+ return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/\s+/g,' ');
 }
-function connectAccount(key){
- if(!configured()){state.error='Renseignez votre ID client OAuth Web dans config.js.';render();return}
- if(!tokenClient&&!initGoogle()){state.error='Google Identity Services se charge encore.';render();return}
- state.pendingAccount=key;
- tokenClient.requestAccessToken({prompt:'select_account'});
+function fractionToNumber(v){
+ v=String(v).trim().replace(',','.');
+ if(/^\d+\s+\d+\/\d+$/.test(v)){const [a,b]=v.split(/\s+/);const [n,d]=b.split('/').map(Number);return Number(a)+n/d}
+ if(/^\d+\/\d+$/.test(v)){const [n,d]=v.split('/').map(Number);return d?n/d:0}
+ return Number(v)||0;
 }
-function disconnectAccount(key){state.accounts[key]=emptyAccount();persistSession();render();}
-async function apiFor(key,u){const a=state.accounts[key];const r=await fetch(u,{headers:{Authorization:`Bearer ${a.token}`}});if(!r.ok){if(r.status===401){state.accounts[key]=emptyAccount();persistSession();throw Error(`${labels[key]} : votre session Google a expiré. Reconnectez ce compte.`)}throw Error(`${labels[key]} : Google API ${r.status}`)}return r.json()}
-function gh(h,n){return(h||[]).find(x=>x.name?.toLowerCase()===n.toLowerCase())?.value||''}
-async function loadGoogleAccount(key){
- const a=state.accounts[key];if(!a.token)return;
- const p=await apiFor(key,'https://gmail.googleapis.com/gmail/v1/users/me/profile');a.email=p.emailAddress||'';
- const other=key==='private'?'work':'private';
- if(state.accounts[other].token&&state.accounts[other].email&&state.accounts[other].email.toLowerCase()===a.email.toLowerCase()){a.token=null;a.email='';a.messages=[];a.events=[];throw Error(`${labels[key]} : ce compte Google est déjà utilisé pour ${labels[other]}. Choisissez un autre compte.`)}
- const q=encodeURIComponent('in:inbox -in:spam -category:promotions -category:social -category:forums');
- const refs=await apiFor(key,`https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${q}&maxResults=25`);
- a.messages=(await Promise.all((refs.messages||[]).map(async x=>{try{
-  const m=await apiFor(key,`https://gmail.googleapis.com/gmail/v1/users/me/messages/${x.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`),h=m.payload?.headers||[];
-  return{id:m.id,sender:gh(h,'From'),subject:gh(h,'Subject')||'(Sans objet)',date:gh(h,'Date'),snippet:m.snippet||'',time:+m.internalDate||0,account:key}
- }catch{return null}}))).filter(Boolean).sort((x,y)=>y.time-x.time);
- const start=new Date();start.setHours(0,0,0,0);const end=new Date(start);end.setDate(end.getDate()+8);
- const ev=await apiFor(key,`https://www.googleapis.com/calendar/v3/calendars/primary/events?singleEvents=true&orderBy=startTime&maxResults=150&timeMin=${encodeURIComponent(start.toISOString())}&timeMax=${encodeURIComponent(end.toISOString())}`);
- a.events=(ev.items||[]).map(e=>({id:e.id,title:e.summary||'Sans titre',start:e.start?.dateTime||e.start?.date||'',link:e.htmlLink||'',location:e.location||'',account:key}));
- persistSession();
+function roundSmart(n){
+ if(!Number.isFinite(n))return 0;
+ if(Math.abs(n)>=100)return Math.round(n);
+ if(Math.abs(n)>=10)return Math.round(n*10)/10;
+ return Math.round(n*100)/100;
 }
-async function loadNews(){let j=null;for(const u of [CFG.PAYROLL_NEWS_URL,'data/news.json']){try{const r=await fetch(u+(u.includes('?')?'&':'?')+'t='+Date.now(),{cache:'no-store'});if(r.ok){j=await r.json();break}}catch{}}state.news=(Array.isArray(j?.items)?j.items:[]).sort((a,b)=>new Date(b.publishedAt||b.discoveredAt||0)-new Date(a.publishedAt||a.discoveredAt||0))}
-async function refreshAll(){state.loading=true;state.error='';render();try{await Promise.all([...connectedKeys().map(loadGoogleAccount),loadNews()]);snapshot()}catch(e){state.error=e.message}state.loading=false;render()}
-function addArchive(item){if(!item?.url)return;const key=item.url+'|'+(item.theme||'');state.archive=[{date:new Date().toISOString(),title:item.title||'Résultat',url:item.url,source:item.source||'Web',theme:item.theme||'Général',scope:item.scope||state.scope},...state.archive.filter(x=>(x.url+'|'+(x.theme||''))!==key)].slice(0,500);save('pj_archive',state.archive)}
-function snapshot(){state.news.slice(0,20).forEach(a=>a?.url&&addArchive({title:a.title,url:a.url,source:a.source||'Source',theme:'Paie',scope:'work'}))}
-function allMessages(){return connectedKeys().flatMap(k=>state.accounts[k].messages).sort((a,b)=>b.time-a.time)}
-function allEvents(){return connectedKeys().flatMap(k=>state.accounts[k].events).sort((a,b)=>new Date(a.start)-new Date(b.start))}
-function scopedItems(type){if(state.scope==='all')return type==='messages'?allMessages():allEvents();return state.accounts[state.scope][type]||[]}
-function watchVisible(w,scope=state.scope){if(!w.active)return false;if(scope==='all')return w.spaces?.length>0;return w.spaces?.includes(scope)}
-function scopeTabs(){return `<div class="scope-tabs"><button class="${state.scope==='all'?'active':''}" data-scope="all">Tout</button><button class="${state.scope==='private'?'active':''}" data-scope="private">🏠 Privé</button><button class="${state.scope==='work'?'active':''}" data-scope="work">💼 Travail</button></div>`}
-function accountBadge(k){return `<span class="account-badge ${k}">${labels[k]}</span>`}
-
-function loadingScreen(){return `<section class="loading-screen"><h1>☀️ PointJour</h1><p>Préparation de votre brief…</p><div class="progress"><span></span></div><small>Analyse de vos comptes Google et de vos veilles.</small></section>`}
-function openingChooser(){return `<section class="signin-scene"><div><img class="signin-logo" src="icon-192.png" alt="PointJour"><h1>PointJour</h1><h3>Quels comptes souhaitez-vous utiliser aujourd’hui ?</h3><p>Cochez Privé, Travail ou les deux, puis validez. PointJour enchaînera uniquement les connexions nécessaires avant d’ouvrir le Brief.</p>${state.error?`<div class="notice error">${esc(state.error)}</div>`:''}<div class="account-choice card"><label class="toggle-label"><input id="choosePrivate" type="checkbox" ${state.chosen.private?'checked':''}> 🏠 Compte privé</label><label class="toggle-label"><input id="chooseWork" type="checkbox" ${state.chosen.work?'checked':''}> 💼 Compte travail</label><button class="primary validate-choice" id="chooseContinue">Valider</button></div><button class="secondary" id="continueNoGoogle">Continuer sans compte Google</button><p class="tag">Lecture seule : Gmail + Google Agenda.</p></div></section>`}
-function chosenKeys(){return ['private','work'].filter(k=>state.chosen[k])}
-function allChosenReady(){const ks=chosenKeys();return ks.length>0&&ks.every(k=>state.accounts[k].token)}
-function signin(){const ks=chosenKeys(),next=nextChosenMissing();return `<section class="signin-scene"><div><img class="signin-logo" src="icon-192.png" alt="PointJour"><h1>PointJour</h1><h3>Connexion des comptes sélectionnés</h3><p>PointJour traite les comptes dans l’ordre : Privé, puis Travail. Cliquez sur le compte en attente pour ouvrir la connexion Google.</p>${state.error?`<div class="notice error">${esc(state.error)}</div>`:''}<div class="account-connect">${ks.map(k=>{const a=state.accounts[k],pending=!a.token&&k===next;return `<div class="card account-card ${pending?'account-card-action':''}" ${pending?`data-connect="${k}" role="button" tabindex="0"`:''}><h3>${labels[k]}</h3>${a.token?`<p class="notice ok">✅ ${esc(a.email||'Compte connecté')}</p>`:`<p>${pending?'👉 Cliquez ici pour vous connecter avec Google.':'Connexion en attente.'}</p>${pending?`<button class="secondary skip-account" id="skipAccount" data-skip="${k}" type="button">Continuer sans ce compte</button>`:''}`}</div>`}).join('')}</div><button class="secondary" id="backChoose">← Modifier le choix des comptes</button><p class="tag">Un compte déjà valide est sauté automatiquement. Continuer sans un compte ne le supprime pas et ne le déconnecte pas.</p>${!configured()?'<div class="notice">Renseignez le client OAuth Web dans <b>config.js</b>.</div>':''}</div></section>`}
-
-function home(){const active=state.watches.filter(w=>watchVisible(w));const mails=scopedItems('messages'),events=scopedItems('events');return topItems('☀️ PointJour','Bonjour ! Installez-vous : l’émeu a préparé votre point du jour.')+`${scopeTabs()}<div class="welcome card"><b>Bonjour !</b><p>${connectedKeys().map(k=>`${labels[k]} : ${esc(state.accounts[k].email)}`).join('<br>')}</p>${state.error?`<div class="notice error">${esc(state.error)}</div>`:''}</div><div class="grid"><button class="tile" data-go="mail">📧<strong>Gmail</strong><span>${mails.length} messages</span></button><button class="tile" data-go="calendar">📅<strong>Agenda</strong><span>${events.length} événements / 8 jours</span></button>${active.map(w=>`<button class="tile" data-watch="${state.watches.indexOf(w)}">🔎<strong>${esc(w.name)}</strong><span>${w.subs.length} sous-thèmes · ${(w.spaces||[]).map(x=>x==='private'?'🏠':'💼').join(' ')}</span></button>`).join('')}</div><div class="card quick"><button class="primary" id="refresh">↻ Actualiser</button><button class="secondary" data-go="brief">✓ Accéder à mon brief</button></div>`}
-function mail(){const msgs=scopedItems('messages');return topItems('📧 Courriels','Les nouveaux messages utiles, sans promotions ni spam.')+scopeTabs()+`<div class="card hint">Promotions, réseaux sociaux, forums et spam sont exclus.</div>${msgs.map(m=>`<div class="item" data-mail="${m.id}" data-account="${m.account}">${accountBadge(m.account)}<h3>${esc(m.subject)}</h3><b>${esc(m.sender)}</b><p>${esc(m.snippet)}</p><span class="meta">${esc(m.date)}</span></div>`).join('')||'<div class="empty">Aucun message pour ce filtre.</div>'}`}
-function calendar(){const evs=scopedItems('events');return topItems('📅 Agenda','Aujourd’hui et les sept prochains jours, pour garder le rythme.')+scopeTabs()+`<div class="card"><b>Aujourd’hui + 7 jours</b></div>${evs.map(e=>`<div class="item" data-event="${esc(e.link)}">${accountBadge(e.account)}<h3>${esc(e.title)}</h3><p>${esc(new Date(e.start.length===10?e.start+'T00:00:00':e.start).toLocaleString('fr-FR',{dateStyle:'medium',timeStyle:e.start.length===10?undefined:'short'}))}</p>${e.location?`<span class="meta">📍 ${esc(e.location)}</span>`:''}</div>`).join('')||'<div class="empty">Aucun événement pour ce filtre.</div>'}`}
-function brief(){const active=state.watches.filter(w=>watchVisible(w)),msgs=scopedItems('messages'),evs=scopedItems('events');return topItems('☀️ PointJour — Brief du jour','Votre point de départ : comptes, messages, agenda et veilles.')+scopeTabs()+`<div class="welcome card"><div><b>Comptes utilisés</b><p>${connectedKeys().length?connectedKeys().map(k=>`${labels[k]} : ${esc(state.accounts[k].email)}`).join('<br>'):'Mode sans compte Google'}</p></div><button class="btn-blue" id="refresh">↻ Actualiser</button>${state.error?`<div class="notice error">${esc(state.error)}</div>`:''}</div><div class="brief-grid"><div class="card accent-blue"><h3>📧 Gmail</h3><p>${msgs.length} message(s) récent(s).</p><button class="btn-blue" data-go="mail">Voir les messages →</button></div><div class="card accent-green"><h3>📅 Agenda</h3><p>${evs.length} événement(s) sur 8 jours.</p><button class="btn-green" data-go="calendar">Voir les événements →</button></div>${active.map((w,i)=>{const idx=state.watches.indexOf(w),cls=['btn-orange','btn-purple','btn-green'][i%3];return `<div class="card"><h3>🔎 ${esc(w.name)}</h3><p>${w.subs.length} sous-thème${w.subs.length>1?'s':''} configuré${w.subs.length>1?'s':''}.</p><p>${(w.spaces||[]).map(accountBadge).join(' ')}</p><button class="${cls}" data-search-watch="${idx}">Lancer la recherche →</button></div>`}).join('')}</div>`}
-function filterNews(w){const terms=w.subs.map(x=>x.toLowerCase());return state.news.filter(a=>{const t=[a.title,a.summary,...(a.topics||[])].join(' ').toLowerCase();return !terms.length||terms.some(x=>t.includes(x))})}
-function sourceDomainsFor(theme){return state.sources.filter(x=>x.active&&(!x.themes.length||x.themes.includes(theme))).map(x=>{try{return new URL(x.url).hostname.replace(/^www\./,'')}catch{return ''}}).filter(Boolean)}
-function webSearchUrl(q,theme){const ds=sourceDomainsFor(theme);const suffix=ds.length?' ('+ds.map(d=>'site:'+d).join(' OR ')+')':'';return 'https://www.google.com/search?q='+encodeURIComponent(q+suffix)}
-function watchPage(){const w=state.watches[state.selected],paie=w.name.toLowerCase()==='paie',items=paie?filterNews(w):[],shown=state.tab==='archive'?items.slice(10):items.slice(0,10),domains=sourceDomainsFor(w.name);return topItems(`🔎 ${esc(w.name)}`,`${w.subs.length} sous-thèmes configurés · ${(w.spaces||[]).map(x=>labels[x]).join(' + ')}`)+`<div class="tabs"><button class="${state.tab==='today'?'primary':'secondary'}" data-tab="today">Aujourd’hui</button><button class="${state.tab==='archive'?'primary':'secondary'}" data-tab="archive">Archives</button></div>${paie?(shown.map(article).join('')||'<div class="empty">Aucun résultat dans cette rubrique.</div>'):`<div class="card"><h3>Recherche Web sur vos sources</h3><p>${w.subs.map(x=>`<span class="badge">${esc(x)}</span>`).join(' ')}</p><div class="row">${w.subs.slice(0,20).map(s=>`<button class="secondary" data-search="${esc(s)}">🔎 ${esc(s)}</button>`).join('')}</div>${domains.length?`<p class="meta">Sources actives : ${esc(domains.join(', '))}</p>`:'<p class="meta">Aucune source affectée : recherche Web générale.</p>'}</div>`}`}
-function article(a){return `<article class="item"><h3>${esc(a.title)}</h3><p>${esc(a.summary||'')}</p><span class="badge">${esc(a.source||'Source')}</span>${(a.topics||[]).slice(0,3).map(t=>`<span class="badge">${esc(t)}</span>`).join('')}<p class="meta">${esc(String(a.publishedAt||a.discoveredAt||'').slice(0,10))}</p><a class="primary inline" href="${esc(a.url)}" target="_blank" rel="noopener">Ouvrir la source ↗</a></article>`}
-function watches(){return topItems('🔎 Mes veilles','Choisissez les sujets à garder à l’œil.')+`<div class="notice ok"><b>Jusqu’à 20 sous-thèmes par veille.</b><br>Chaque veille peut être affichée dans 🏠 Privé, 💼 Travail, ou les deux. Une veille désactivée conserve ses réglages.</div>${state.watches.map((w,i)=>`<div class="card source"><div><h3>${esc(w.name)}</h3><span class="meta">${w.subs.length} sous-thème${w.subs.length>1?'s':''} • ${w.active?'Veille active ✓':'Veille désactivée'} • ${(w.spaces||[]).map(x=>labels[x]).join(' + ')||'Aucun univers'}</span></div><button class="secondary" data-edit="${i}">Modifier</button></div>`).join('')}<div class="card row"><button class="secondary" data-go="search">⌕ Recherche</button><button class="secondary" data-go="sources">☷ Sources</button><button class="secondary" data-go="web">🌐 Recherche Web</button></div>`}
-function editWatch(){const w=state.watches[state.selected];return topItems('⚙️ Modifier la veille','Personnalisez votre veille sans perdre vos réglages.')+`<div class="card"><div class="field"><label>Nom du thème</label><input id="wname" maxlength="24" value="${esc(w.name)}"></div><div class="field"><label class="toggle-label"><input id="wactive" type="checkbox" ${w.active?'checked':''}> Veille active</label><p class="field-help">Décochez pour omettre cette veille dans PointJour. Vos sous-thèmes et affectations restent enregistrés.</p></div><div class="field"><label>Afficher les résultats dans</label><div class="universe-choices"><label class="toggle-label"><input id="wprivate" type="checkbox" ${w.spaces?.includes('private')?'checked':''}> 🏠 Privé</label><label class="toggle-label"><input id="wwork" type="checkbox" ${w.spaces?.includes('work')?'checked':''}> 💼 Travail</label></div><p class="field-help">Les deux cases peuvent être cochées simultanément.</p></div><div class="field"><label>Sous-thèmes (maximum 20, un par ligne)</label><textarea id="wsubs" rows="12">${esc(w.subs.join('\n'))}</textarea><p class="counter">${w.subs.length} / 20 sous-thèmes</p></div><div class="row"><button class="primary" id="wsave">Enregistrer</button><button class="secondary" id="wcancel">Annuler</button></div></div>`}
-function searchPage(){return webPage()}
-function sourcesPage(){const rows=state.sources.map((x,i)=>`<div class="card source"><div><h3>${x.active?'🟢':'⚪'} ${esc(x.name)}</h3><span class="meta">${esc(x.themes.join(' · ')||'Tous thèmes')} · ${esc((()=>{try{return new URL(x.url).hostname}catch{return x.url}})())}</span></div><div class="row"><button class="secondary" data-source-test="${i}">Tester</button><button class="secondary" data-source-toggle="${i}">${x.active?'Désactiver':'Activer'}</button><button class="secondary" data-source-edit="${i}">Modifier</button><button class="danger" data-source-delete="${i}">Supprimer</button></div></div>`).join('');return topItems('☷ Mes sources','Vos sources, vos thèmes : jusqu’à 30 adresses personnalisables.')+`<div class="notice ok"><b>${state.sources.length} / 30 sources.</b> Une source désactivée reste enregistrée mais n’est plus utilisée dans les recherches.</div><div class="row"><button class="primary" id="sourceAdd" ${state.sources.length>=30?'disabled':''}>+ Ajouter une source</button><button class="secondary" id="sourceReset">Restaurer les sources par défaut</button></div>${rows||'<div class="empty">Aucune source configurée.</div>'}`}
-function sourceEditPage(){const isNew=state.sourceEdit<0,x=isNew?{name:'',url:'https://',active:true,themes:[]}:state.sources[state.sourceEdit];return topItems(isNew?'＋ Ajouter une source':'✎ Modifier la source','Nom, adresse et thèmes associés.')+`<div class="card"><div class="field"><label>Nom</label><input id="sname" maxlength="50" value="${esc(x.name)}"></div><div class="field"><label>URL</label><input id="surl" value="${esc(x.url)}"></div><div class="field"><label class="toggle-label"><input id="sactive" type="checkbox" ${x.active?'checked':''}> Source active</label></div><div class="field"><label>Associer aux veilles</label>${state.watches.map((w,i)=>`<label class="toggle-label"><input type="checkbox" data-stheme="${i}" ${x.themes.includes(w.name)?'checked':''}> ${esc(w.name)}</label>`).join('')}<p class="field-help">Aucune case cochée = source utilisable pour tous les thèmes.</p></div><div class="row"><button class="primary" id="ssave">Enregistrer</button><button class="secondary" data-go="sources">Annuler</button></div></div>`}
-function webPage(){return topItems('🌐 Recherche Web','PointJour combine votre thème, vos sous-thèmes et vos sources actives.')+`<div class="card"><div class="field"><label>Mot-clé complémentaire</label><input id="globalq" placeholder="Ex. nouveautés, guide, barème, recette…"></div><div class="field"><label>Choisir une veille</label><select id="globalwatch"><option value="">Recherche générale</option>${state.watches.filter(w=>w.active).map(w=>`<option>${esc(w.name)}</option>`).join('')}</select></div><button class="btn-blue" id="globalsearch">🔎 Rechercher sur le Web</button></div>${state.watches.filter(w=>w.active).map((w,i)=>{const idx=state.watches.indexOf(w),cls=['btn-orange','btn-purple','btn-green'][i%3];return `<div class="card source"><div><h3>🔎 ${esc(w.name)}</h3><span class="meta">${w.subs.length} sous-thèmes · ${sourceDomainsFor(w.name).length} source(s) active(s)</span></div><div class="row"><button class="secondary" data-edit="${idx}">✏️ Modifier</button><button class="${cls}" data-search-watch="${idx}">Lancer la recherche</button></div></div>`}).join('')}`}
-function archives(){const baseThemes=['Paie','Auto','Cuisine'],themes=['all',...new Set([...baseThemes,...state.watches.filter(w=>w.active).map(w=>w.name),...state.archive.map(x=>x.theme).filter(Boolean)])],items=state.archive.filter(x=>(state.scope==='all'||x.scope==='all'||x.scope===state.scope)&&(state.archiveTheme==='all'||x.theme===state.archiveTheme));return topItems('▣ Archives','Un vrai historique : chaque résultat peut être rouvert.')+scopeTabs()+`<div class="tabs archive-themes">${themes.map(t=>`<button class="${state.archiveTheme===t?'primary':'secondary'}" data-archive-theme="${esc(t)}">${esc(t==='all'?'Tous les thèmes':t)}</button>`).join('')}</div>${items.map(x=>`<a class="item archive-item" href="${esc(x.url)}" target="_blank" rel="noopener"><span class="badge">${esc(x.theme||'Général')}</span><h3>${esc(x.title)}</h3><p>${esc(x.source||'Source')}</p><span class="meta">${new Date(x.date).toLocaleString('fr-FR',{dateStyle:'medium',timeStyle:'short'})}</span><strong>Ouvrir la source ↗</strong></a>`).join('')||'<div class="empty">Aucun résultat archivé pour ce filtre.</div>'}`}
-function accountCard(key){const a=state.accounts[key];return `<div class="card account-card"><h3>${labels[key]}</h3>${a.token?`<p><b>${esc(a.email||'Compte connecté')}</b></p><p>📧 ${a.messages.length} messages · 📅 ${a.events.length} événements</p><div class="row"><button class="secondary" data-connect="${key}">Changer de compte</button><button class="danger" data-disconnect="${key}">Déconnecter</button></div>`:`<p>Aucun compte connecté.</p><button class="primary" data-connect="${key}">Connecter</button>`}</div>`}
-function settings(){return topItems('☰ Paramètres','Une application bien réglée pour une journée plus sereine.')+`<div class="settings-grid">${accountCard('private')}${accountCard('work')}<div class="card"><h3>Veilles personnalisées</h3><p>Jusqu’à 20 sous-thèmes, affectés à Privé et/ou Travail.</p><button class="secondary" data-go="watches">Gérer mes veilles</button></div><div class="card"><h3>Sécurité</h3><p>Pour éviter une reconnexion après F5 ou Ctrl+F5, les jetons OAuth sont conservés temporairement dans <b>sessionStorage</b> jusqu’à leur expiration. Ils ne sont pas enregistrés durablement dans localStorage. Vous pouvez déconnecter ou changer chaque compte à tout moment.</p></div></div>`}
-function morePage(){return topItems('☰ Plus','Tout le reste à portée de bec.')+`<div class="menu-list"><button data-go="web">🌐 <span><b>Recherche Web</b><small>Thèmes, sous-thèmes et sources actives</small></span>›</button><button data-go="sources">☷ <span><b>Mes sources</b><small>Ajouter, modifier, tester ou désactiver</small></span>›</button><button data-go="settings">⚙️ <span><b>Paramètres</b><small>Comptes Google, veilles et sécurité</small></span>›</button></div>`}
-
-function render(){document.body.dataset.page=state.loading?'loading':(state.page||'home');let h='';if(!state.sessionReady){if(state.loading)h=loadingScreen();else if(state.page==='choose')h=openingChooser();else h=signin();}else if(state.loading)h=loadingScreen();else if(state.page==='home'||state.page==='brief'||state.page==='signin'||state.page==='choose')h=brief();else if(state.page==='mail')h=mail();else if(state.page==='calendar')h=calendar();else if(state.page==='watches')h=watches();else if(state.page==='watch')h=watchPage();else if(state.page==='edit')h=editWatch();else if(state.page==='search'||state.page==='web')h=webPage();else if(state.page==='sources')h=sourcesPage();else if(state.page==='sourceedit')h=sourceEditPage();else if(state.page==='archives')h=archives();else if(state.page==='settings')h=settings();else h=morePage();$('#app').innerHTML=h;$('#nav')?.classList.toggle('hidden',!state.sessionReady);bind();}
-function bind(){
- document.querySelectorAll('[data-go]').forEach(x=>x.onclick=()=>setPage(x.dataset.go));
- document.querySelectorAll('[data-connect]').forEach(x=>x.onclick=()=>connectAccount(x.dataset.connect));
- document.querySelectorAll('[data-disconnect]').forEach(x=>x.onclick=()=>disconnectAccount(x.dataset.disconnect));
- document.querySelectorAll('.account-card-action[data-connect]').forEach(x=>{x.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();connectAccount(x.dataset.connect)}}});
- if($('#skipAccount'))$('#skipAccount').onclick=()=>{const k=$('#skipAccount').dataset.skip;state.chosen[k]=false;state.error='';persistSession();const next=nextChosenMissing();if(next){state.page='signin';render()}else finishSession()};
- if($('#chooseContinue'))$('#chooseContinue').onclick=()=>{state.chosen.private=$('#choosePrivate').checked;state.chosen.work=$('#chooseWork').checked;persistSession();if(!state.chosen.private&&!state.chosen.work){state.error='Cochez au moins un compte ou choisissez « Continuer sans compte Google ».';render();return}state.error='';const next=nextChosenMissing();if(next){state.page='signin';render();setTimeout(()=>connectAccount(next),150)}else finishSession()};
- if($('#continueNoGoogle'))$('#continueNoGoogle').onclick=async()=>{state.chosen={private:false,work:false};state.loading=true;persistSession();render();try{await loadNews();state.error=''}catch(e){state.error=e.message}state.loading=false;state.sessionReady=true;state.page='brief';persistSession();render()};
- if($('#backChoose'))$('#backChoose').onclick=()=>{state.page='choose';state.error='';persistSession();render()};
- document.querySelectorAll('[data-scope]').forEach(x=>x.onclick=()=>{state.scope=x.dataset.scope;persistSession();render()});
- $('#refresh')&&($('#refresh').onclick=refreshAll);
- document.querySelectorAll('[data-mail]').forEach(x=>x.onclick=()=>{const email=state.accounts[x.dataset.account]?.email||'';open(`https://mail.google.com/mail/u/?authuser=${encodeURIComponent(email)}#inbox/${encodeURIComponent(x.dataset.mail)}`,'_blank')});
- document.querySelectorAll('[data-event]').forEach(x=>x.onclick=()=>x.dataset.event&&open(x.dataset.event,'_blank'));
- document.querySelectorAll('[data-watch]').forEach(x=>x.onclick=()=>{state.selected=+x.dataset.watch;state.tab='today';persistSession();setPage('watch')});
- document.querySelectorAll('[data-edit]').forEach(x=>x.onclick=()=>{state.selected=+x.dataset.edit;persistSession();setPage('edit')});
- document.querySelectorAll('[data-tab]').forEach(x=>x.onclick=()=>{state.tab=x.dataset.tab;persistSession();render()});
- document.querySelectorAll('[data-search]').forEach(x=>x.onclick=()=>{const w=state.watches[state.selected],q=`${w.name} ${x.dataset.search}`,url=webSearchUrl(q,w.name);addArchive({title:`Recherche : ${q}`,url,source:'Recherche Web',theme:w.name,scope:(w.spaces||[]).length===1?w.spaces[0]:'all'});open(url,'_blank')});
- document.querySelectorAll('[data-search-watch]').forEach(x=>x.onclick=()=>{const w=state.watches[+x.dataset.searchWatch];if(!w)return;const q=[w.name,...w.subs.slice(0,20)].join(' '),url=webSearchUrl(q,w.name);addArchive({title:`Recherche ${w.name}`,url,source:'Recherche Web',theme:w.name,scope:(w.spaces||[]).length===1?w.spaces[0]:'all'});open(url,'_blank')});
-  if($('#globalsearch'))$('#globalsearch').onclick=()=>{const extra=$('#globalq').value.trim(),name=$('#globalwatch').value.trim(),w=state.watches.find(x=>x.name===name),q=[name,w?.subs?.join(' '),extra].filter(Boolean).join(' ');if(!q){toast('Saisissez un mot-clé ou choisissez une veille');return}const url=webSearchUrl(q,name);addArchive({title:`Recherche : ${[name,extra].filter(Boolean).join(' — ')}`,url,source:'Recherche Web',theme:name||'Général',scope:w?.spaces?.length===1?w.spaces[0]:'all'});open(url,'_blank')};
- document.querySelectorAll('[data-archive-theme]').forEach(x=>x.onclick=()=>{state.archiveTheme=x.dataset.archiveTheme;render()});
- document.querySelectorAll('[data-source-test]').forEach(x=>x.onclick=()=>{const a=state.sources[+x.dataset.sourceTest];if(a?.url)open(a.url,'_blank')});
- document.querySelectorAll('[data-source-toggle]').forEach(x=>x.onclick=()=>{const i=+x.dataset.sourceToggle;state.sources[i].active=!state.sources[i].active;save('pj_sources',state.sources);render()});
- document.querySelectorAll('[data-source-edit]').forEach(x=>x.onclick=()=>{state.sourceEdit=+x.dataset.sourceEdit;setPage('sourceedit')});
- document.querySelectorAll('[data-source-delete]').forEach(x=>x.onclick=()=>{const i=+x.dataset.sourceDelete;if(confirm('Supprimer cette source ?')){state.sources.splice(i,1);save('pj_sources',state.sources);render()}});
- if($('#sourceAdd'))$('#sourceAdd').onclick=()=>{if(state.sources.length>=30)return;state.sourceEdit=-1;setPage('sourceedit')};
- if($('#sourceReset'))$('#sourceReset').onclick=()=>{if(confirm('Restaurer les sources par défaut ?')){state.sources=migrateSources(DEFAULT_SOURCES);save('pj_sources',state.sources);render()}};
- if($('#ssave'))$('#ssave').onclick=()=>{const name=$('#sname').value.trim(),url=$('#surl').value.trim(),themes=[...document.querySelectorAll('[data-stheme]:checked')].map(x=>state.watches[+x.dataset.stheme]?.name).filter(Boolean);if(!name||!/^https?:\/\//i.test(url)){toast('Nom et URL http(s) valides requis');return}const obj={name,url,active:$('#sactive').checked,themes};if(state.sourceEdit<0){if(state.sources.length>=30){toast('Maximum 30 sources');return}state.sources.push(obj)}else state.sources[state.sourceEdit]=obj;save('pj_sources',state.sources);toast('Source enregistrée');setPage('sources')};
- if($('#wsave'))$('#wsave').onclick=()=>{const name=$('#wname').value.trim()||'Veille',subs=$('#wsubs').value.split('\n').map(x=>x.trim()).filter(Boolean).slice(0,20),spaces=[];if($('#wprivate').checked)spaces.push('private');if($('#wwork').checked)spaces.push('work');state.watches[state.selected]={name,active:$('#wactive').checked,subs,spaces};save('pj_watches',state.watches);toast('Veille enregistrée');setPage('watches')};
- $('#wcancel')&&($('#wcancel').onclick=()=>setPage('watches'));
+function scaleIngredientText(text,factor){
+ if(!text||!factor||Math.abs(factor-1)<0.001)return text||'';
+ return text.split(/\s*[•;]\s*/).map(part=>{
+   let p=part.trim(); if(!p)return p;
+   // Quantity at the end: "poulet 1,5 kg", "oignons 2", "crème 30 cl"
+   const rx=/^(.*?)(\d+(?:[.,]\d+)?|\d+\s+\d+\/\d+|\d+\/\d+)\s*(kg|g|mg|l|cl|ml|pi[eè]ces?|unit[eé]s?|tranches?|cubes?|bo[iî]tes?|sachets?|pots?|cuill[eè]res?(?:\s+à\s+(?:soupe|caf[eé]))?|c\.?\s*à\s*s\.?|c\.?\s*à\s*c\.?)?$/i;
+   const m=p.match(rx);
+   if(!m)return p;
+   const q=fractionToNumber(m[2]), nq=roundSmart(q*factor);
+   if(!q)return p;
+   const val=String(nq).replace('.',',');
+   return `${m[1].trim()} ${val}${m[3]?' '+m[3]:''}`.trim();
+ }).join(' • ');
 }
-if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
-window.addEventListener('load',async()=>{document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>setPage(b.dataset.page));setTimeout(initGoogle,700);
- if(state.sessionReady&&connectedKeys().length){
-  state.loading=true;render();
-  try{await Promise.all([...connectedKeys().map(loadGoogleAccount),loadNews()]);state.error=''}catch(e){state.error=e.message}
-  state.loading=false;persistSession();render();
- }else render();
-});
+function learnRecipesFromMenus(){
+ let changed=false;
+ Object.values(menus).forEach(day=>['midday','evening'].forEach(slot=>(day[slot]||[]).forEach(meal=>{
+   if(!meal?.name||!meal.ingredients||/restaurant|aucun ingr/i.test(meal.name+' '+meal.ingredients))return;
+   const k=meal.name.toLowerCase();
+   if(!recipes[k]){recipes[k]=meal.ingredients;changed=true}
+   if(!recipeMeta[k]&&meal.people){
+     recipeMeta[k]={ingredients:meal.ingredients,basePeople:Number(meal.people)||1,source:'planning validé'};
+     changed=true;
+   }
+ })));
+ if(changed){
+   localStorage.setItem(K.recipes,JSON.stringify(recipes));
+   localStorage.setItem(K.recipeMeta,JSON.stringify(recipeMeta));
+ }
+}
+learnRecipesFromMenus();
+
+async function lookupRecipeOnline(name){
+ try{
+   const r=await fetch('https://www.themealdb.com/api/json/v1/1/search.php?s='+encodeURIComponent(name));
+   const j=await r.json(),m=j.meals?.[0]; if(!m)return null;
+   const a=[];
+   for(let i=1;i<=20;i++){
+     const ing=(m['strIngredient'+i]||'').trim(),qty=(m['strMeasure'+i]||'').trim();
+     if(ing)a.push(ing+(qty?' '+qty:''));
+   }
+   if(!a.length)return null;
+   return {ingredients:a.join(' • '),basePeople:4,source:'TheMealDB — estimation 4 portions'};
+ }catch(e){return null}
+}
+async function resolveMealIngredients(meal){
+ if(!meal?.name||/restaurant|aucun repas/i.test(meal.name))return meal;
+ const k=meal.name.toLowerCase(),people=Math.max(1,Number(meal.people)||1);
+ let meta=recipeMeta[k];
+ if(meta?.ingredients){
+   meal.ingredients=scaleIngredientText(meta.ingredients,people/Math.max(1,Number(meta.basePeople)||people));
+   meal.recipeSource=meta.source||'recette enregistrée';
+   return meal;
+ }
+ if(recipes[k]){
+   // Ancienne recette sans nombre de portions : on la considère comme déjà adaptée au repas.
+   meal.ingredients=meal.ingredients||recipes[k];
+   meal.recipeSource='recette personnelle';
+   return meal;
+ }
+ const online=await lookupRecipeOnline(meal.name);
+ if(online){
+   recipeMeta[k]=online;
+   recipes[k]=online.ingredients;
+   localStorage.setItem(K.recipeMeta,JSON.stringify(recipeMeta));
+   localStorage.setItem(K.recipes,JSON.stringify(recipes));
+   meal.ingredients=scaleIngredientText(online.ingredients,people/online.basePeople);
+   meal.recipeSource=online.source;
+ }
+ return meal;
+}
+async function enrichPendingRecipes(){
+ const meals=[];
+ Object.values(pending).forEach(day=>['midday','evening'].forEach(slot=>(day[slot]||[]).forEach(m=>meals.push(m))));
+ $('#pdf-progress').style.display='block';
+ for(let i=0;i<meals.length;i++){
+   $('#pdf-progress').textContent=`Recherche des recettes et calcul des quantités… ${i+1}/${meals.length}`;
+   await resolveMealIngredients(meals[i]);
+ }
+ $('#pdf-progress').style.display='none';
+}
+
+function renderMenus(){
+ const ds=dates();
+ if(!ds.length){
+   $('#menus-list').innerHTML='<div class="card">Aucun planning. Utilisez « Nouveau planning ».</div>';
+   return;
+ }
+ const today=iso(new Date());
+ const todayIndex=ds.indexOf(today);
+ if(menuAutoCenter && todayIndex>=0) selectedWeek=Math.floor(todayIndex/7);
+ const start=selectedWeek*7,list=ds.slice(start,start+7);
+ $('#week-label').textContent=list.length?`${short(parseDate(list[0]))} – ${short(parseDate(list[list.length-1]))}`:'';
+ $('#prev-week').disabled=selectedWeek<=0;
+ $('#next-week').disabled=(selectedWeek+1)*7>=ds.length;
+ $('#menus-list').innerHTML=list.map(date=>dayCard(date,menus[date]||{midday:[],evening:[]})).join('');
+ if(menuAutoCenter){
+   menuAutoCenter=false;
+   requestAnimationFrame(()=>{
+     const target=document.querySelector(`[data-menu-date="${today}"]`);
+     if(target) target.scrollIntoView({behavior:'auto',block:'center'});
+   });
+ }
+}
+function changeWeek(delta){
+ menuAutoCenter=false;
+ selectedWeek+=delta;
+ renderMenus();
+ window.scrollTo({top:0,behavior:'smooth'});
+}
+function dayCard(date,d){
+ const isToday=date===iso(new Date());
+ return `<div class="card day-card ${isToday?'today-card':''}" data-menu-date="${date}">
+   <div class="day-title">${isToday?'<span class="today-badge">Aujourd’hui</span> ':''}${esc(fr(parseDate(date)))}</div>
+   <div class="slot mid"><b>☀️ Midi</b>${slotHtml(date,'midday',d.midday||[])}<button class="add" onclick="addMeal('${date}','midday')">＋ Ajouter un repas</button></div>
+   <div class="slot eve"><b>🌙 Soir</b>${slotHtml(date,'evening',d.evening||[])}<button class="add" onclick="addMeal('${date}','evening')">＋ Ajouter un repas</button></div>
+ </div>`;
+}
+function slotHtml(date,slot,arr){
+ if(!arr.length)return `<div class="meal"><i>Pas de repas prévu</i></div>`;
+ return arr.map((m,i)=>`<div class="meal">
+   <div class="meal-name">${esc(m.name)}</div>
+   <div class="meal-ingredients"><b>Ingrédients :</b> ${esc(m.ingredients||'non renseignés')}</div>
+   <div class="meal-meta">${m.people?`👥 ${esc(m.people)} convive${Number(m.people)>1?'s':''}`:'👥 nombre de convives non renseigné'}${m.recipeSource?` · 🔎 ${esc(m.recipeSource)}`:''}</div>
+   <div class="actions">
+     <button class="move" onclick="openMove('${date}','${slot}',${i})">Déplacer</button>
+     <button class="swap" onclick="openSwap('${date}','${slot}',${i})">Échanger</button>
+     <button class="delete" onclick="removeMeal('${date}','${slot}',${i})">Supprimer</button>
+     <button class="resto" onclick="restaurant('${date}','${slot}',${i})">Restaurant</button>
+   </div>
+ </div>`).join('');
+}
+function addMeal(date,slot){const n=prompt('Nom du repas :');if(!n)return;snap();ensure(date);menus[date][slot].push({name:n.trim(),ingredients:recipes[n.trim().toLowerCase()]||'',people:0});save();renderMenus();}
+function removeMeal(date,slot,i){if(!confirm('Supprimer ce repas ?'))return;snap();menus[date][slot].splice(i,1);save();renderMenus();}
+function restaurant(date,slot,i){snap();menus[date][slot][i]={name:'Restaurant',ingredients:'aucun ingrédient à prévoir',people:0};save();renderMenus();}
+function openMove(date,slot,i){const m=menus[date][slot][i];$('#sheet').innerHTML=`<h2>Déplacer un repas</h2><p><b>${esc(m.name)}</b></p><input id="mv-date" class="field" type="date" value="${date}"><select id="mv-slot" class="field"><option value="midday">Midi</option><option value="evening">Soir</option></select><p>Le repas est ajouté à la destination sans écraser un repas déjà présent.</p><button class="secondary" onclick="closeModal()">Annuler</button><button class="primary" onclick="doMove('${date}','${slot}',${i})">Déplacer</button>`;openModal();}
+function doMove(date,slot,i){const nd=$('#mv-date').value,ns=$('#mv-slot').value;if(!nd)return;snap();const m=menus[date][slot].splice(i,1)[0];ensure(nd);menus[nd][ns].push(m);save();closeModal();renderMenus();}
+function openSwap(date,slot,i){$('#sheet').innerHTML=`<h2>Échanger deux repas</h2><input id="sw-date" class="field" type="date" value="${date}"><select id="sw-slot" class="field"><option value="midday">Midi</option><option value="evening">Soir</option></select><button class="secondary" onclick="closeModal()">Annuler</button><button class="primary" onclick="doSwap('${date}','${slot}',${i})">Échanger</button>`;openModal();}
+function doSwap(date,slot,i){const nd=$('#sw-date').value,ns=$('#sw-slot').value;ensure(nd);if(!menus[nd][ns].length)return alert("Aucun repas à échanger dans ce créneau.");snap();const a=menus[date][slot][i],b=menus[nd][ns][0];menus[date][slot][i]=b;menus[nd][ns][0]=a;save();closeModal();renderMenus();}
+function resetPlan(){if(!confirm("Réinitialiser le planning d'origine ?"))return;menus=structuredClone(SEED);shopping={};save();localStorage.removeItem(K.shopping);selectedWeek=0;renderMenus();}
+function openModal(){$('#modal').classList.add('open')}function closeModal(){$('#modal').classList.remove('open')}
+
+function newPlanning(){show('newplan')}
+function manualSetup(){$('#sheet').innerHTML=`<h2>Saisie manuelle</h2><label>Date de départ</label><input id="man-start" class="field" type="date" value="${iso(new Date())}"><label>Durée</label><select id="man-weeks" class="field"><option value="1">1 semaine</option><option value="2">2 semaines</option><option value="3">3 semaines</option><option value="4">4 semaines</option></select><button class="secondary" onclick="closeModal()">Annuler</button><button class="primary" onclick="startManual()">Continuer</button>`;openModal();}
+function startManual(){const start=parseDate($('#man-start').value),weeks=+$('#man-weeks').value;closeModal();pending={};let html='';for(let i=0;i<weeks*7;i++){const d=new Date(start);d.setDate(d.getDate()+i);const k=iso(d),ex=menus[k]||{midday:[],evening:[]};html+=`<div class="card"><div class="day-title">${esc(fr(d))}</div><input class="field manual" data-date="${k}" data-slot="midday" placeholder="Midi — repas" value="${esc(ex.midday?.[0]?.name||'')}"><input class="field manual" data-date="${k}" data-slot="evening" placeholder="Soir — repas" value="${esc(ex.evening?.[0]?.name||'')}"></div>`;}$('#manual-list').innerHTML=html;show('manual');}
+function verifyManual(){pending={};$$('.manual').forEach(i=>{const d=i.dataset.date,s=i.dataset.slot;pending[d]??={midday:[],evening:[]};const n=i.value.trim();if(n)pending[d][s]=[{name:n,ingredients:recipes[n.toLowerCase()]||'',people:0}];});renderVerification();}
+function renderVerification(){
+ let missingSlots=0,missingDetails=0,count=0;
+ Object.values(pending).forEach(d=>['midday','evening'].forEach(s=>{
+   const meal=d[s]?.[0];
+   if(meal){count++;if(!meal.ingredients||!meal.people)missingDetails++;}
+   else missingSlots++;
+ }));
+ $('#verify-status').innerHTML=`<span class="badge ok">✅ ${count} repas reconnus</span> <span class="badge warn">⚠️ ${missingSlots} créneau(x) vide(s)</span> <span class="badge warn">📝 ${missingDetails} repas à vérifier</span>`;
+ $('#verify-list').innerHTML=Object.keys(pending).sort().map(date=>`<div class="card"><div class="day-title">${esc(fr(parseDate(date)))}</div>${pendingLine(date,'midday',pending[date].midday)}${pendingLine(date,'evening',pending[date].evening)}</div>`).join('');
+ show('verify');
+}
+function pendingLine(date,slot,arr){
+ const label=slot==='midday'?'☀️ Midi':'🌙 Soir',meal=arr?.[0];
+ if(!meal)return `<div class="pending-meal missing"><div><b>${label}</b><br>[ À renseigner ]</div><button class="smallbtn secondary" onclick="editPending('${date}','${slot}')">✎ Modifier</button></div>`;
+ return `<div class="pending-meal"><div class="pending-main"><b>${label} — ${esc(meal.name)}</b><div class="pending-meta">👥 ${meal.people||'non renseigné'} personne(s)${meal.recipeSource?` · 🔎 ${esc(meal.recipeSource)}`:''}</div><div class="pending-ingredients"><b>Ingrédients calculés :</b> ${esc(meal.ingredients||'aucune recette trouvée — à compléter')}</div></div><button class="smallbtn secondary" onclick="editPending('${date}','${slot}')">✎ Vérifier / modifier</button></div>`;
+}
+function editPending(date,slot){
+ const old=pending[date][slot]?.[0]||{name:'',ingredients:'',people:0};
+ const n=prompt('Nom du repas :',old.name||'');if(n===null)return;
+ if(!n.trim()){pending[date][slot]=[];renderVerification();return;}
+ const p=prompt('Nombre de personnes :',old.people||'');if(p===null)return;
+ const ing=prompt('Ingrédients et quantités calculés (vous pouvez corriger) :',old.ingredients||'');if(ing===null)return;
+ pending[date][slot]=[{...old,name:n.trim(),ingredients:ing.trim(),people:Math.max(0,parseInt(p,10)||0),recipeSource:'validé manuellement'}];
+ renderVerification();
+}
+function confirmPending(){
+ if(!confirm('Remplacer le planning actuel par ce planning validé ?'))return;
+ snap();menus=structuredClone(pending);
+ Object.values(menus).forEach(day=>['midday','evening'].forEach(slot=>(day[slot]||[]).forEach(meal=>{
+   if(meal.name&&meal.ingredients&&meal.people){
+     const k=meal.name.toLowerCase();
+     recipes[k]=meal.ingredients;
+     recipeMeta[k]={ingredients:meal.ingredients,basePeople:Number(meal.people)||1,source:'validé par vous'};
+     meal.recipeSource='validé par vous';
+   }
+ })));
+ localStorage.setItem(K.recipes,JSON.stringify(recipes));
+ localStorage.setItem(K.recipeMeta,JSON.stringify(recipeMeta));
+ shopping={};stockForecast={};save();
+ localStorage.removeItem(K.shopping);localStorage.removeItem(K.forecast);
+ selectedWeek=0;show('menus');
+}
+
+async function importPdf(file){
+ if(!file)return;
+ $('#pdf-progress').style.display='block';
+ $('#pdf-progress').textContent='Lecture du PDF…';
+ try{
+   await ensurePdfJs();
+   const buf=await file.arrayBuffer();
+   const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+   let text='';
+   for(let p=1;p<=pdf.numPages;p++){
+     const page=await pdf.getPage(p);
+     const tc=await page.getTextContent();
+     text+=pdfItemsToText(tc.items)+'\n';
+   }
+   pending=parsePlanningText(text);
+   if(!Object.keys(pending).length){
+     alert("Aucun planning reconnu. Vérifiez que le PDF contient une date, « Midi » / « Soir » et « Personnes ».");
+   }else{
+     await enrichPendingRecipes();
+     renderVerification();
+   }
+ }catch(e){alert("Lecture PDF impossible : "+e.message)}
+ finally{$('#pdf-progress').style.display='none';$('#pdf-file').value='';}
+}
+function ensurePdfJs(){return new Promise((resolve,reject)=>{if(window.pdfjsLib)return resolve();const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';s.onload=()=>{pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';resolve()};s.onerror=()=>reject(new Error('Lecteur PDF indisponible'));document.head.appendChild(s);});}
+function pdfItemsToText(items){
+ let lines=[],current=[],lastY=null;
+ const flush=()=>{const v=current.join(' ').replace(/\s+/g,' ').trim();if(v)lines.push(v);current=[]};
+ for(const item of items){
+   const y=item.transform?.[5]??0;
+   if(lastY!==null&&Math.abs(y-lastY)>3)flush();
+   if(item.str)current.push(item.str);
+   if(item.hasEOL)flush();
+   lastY=y;
+ }
+ flush();
+ return lines.join('\n');
+}
+function parsePlanningText(txt){
+ const out={};let currentDate=null,currentSlot=null;
+ const normalized=String(txt||'').replace(/\u00a0/g,' ').replace(/[ \t]+/g,' ')
+   .replace(/\s+(?=(?:midi|soir|personnes?|convives?)\s*[:\-–—])/gi,'\n')
+   .replace(/\s+(?=\d{1,2}[\/.-]\d{1,2}[\/.-]\d{4}\b)/g,'\n')
+   .replace(/\s+(?=\d{4}-\d{1,2}-\d{1,2}\b)/g,'\n');
+ const ensureDate=()=>{if(currentDate)out[currentDate]??={midday:[],evening:[]}};
+ const activeMeal=()=>currentDate&&currentSlot?out[currentDate]?.[currentSlot]?.[0]:null;
+ for(const raw of normalized.split(/\r?\n/)){
+   const line=raw.trim();if(!line)continue;
+   let m=line.match(/\b(\d{4})-(\d{1,2})-(\d{1,2})\b/);
+   if(m){currentDate=`${m[1]}-${String(m[2]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`;currentSlot=null;ensureDate();continue;}
+   m=line.match(/\b(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})\b/);
+   if(m){currentDate=`${m[3]}-${String(m[2]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`;currentSlot=null;ensureDate();continue;}
+   if(!currentDate)continue;ensureDate();
+   m=line.match(/^midi\s*[:\-–—]?\s*(.+)$/i);
+   if(m?.[1]){currentSlot='midday';out[currentDate].midday=[{name:m[1].trim(),ingredients:'',people:0,recipeSource:''}];continue;}
+   m=line.match(/^soir\s*[:\-–—]?\s*(.+)$/i);
+   if(m?.[1]){currentSlot='evening';out[currentDate].evening=[{name:m[1].trim(),ingredients:'',people:0,recipeSource:''}];continue;}
+   m=line.match(/^(?:personnes?|convives?)\s*[:\-–—]?\s*(\d+)/i);
+   if(m&&activeMeal()){activeMeal().people=Math.max(0,parseInt(m[1],10)||0);continue;}
+ }
+ return out;
+}
+function copyPdfExample(){
+ const t=$('#pdf-example')?.textContent||'';
+ if(navigator.clipboard?.writeText)navigator.clipboard.writeText(t).then(()=>alert('Exemple copié.')).catch(()=>fallbackCopy(t));
+ else fallbackCopy(t);
+}
+function fallbackCopy(t){
+ const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();
+ try{document.execCommand('copy');alert('Exemple copié.')}catch(e){alert('Copie automatique impossible. Sélectionnez le texte manuellement.')}
+ ta.remove();
+}
+
+function renderRecipes(){
+ const box=$('#recipe-list'),keys=Object.keys(recipes).sort();
+ box.innerHTML=keys.length?keys.map(k=>{
+   const meta=recipeMeta[k];
+   return `<div class="recipe"><h3>🍲 ${esc(k.replace(/^./,c=>c.toUpperCase()))}</h3><p>${esc(recipes[k])}</p><p class="muted">${meta?`Base : ${esc(meta.basePeople)} personne(s) · ${esc(meta.source||'recette enregistrée')}`:'Ancienne recette — portions non renseignées'}</p><button class="smallbtn" onclick="editRecipe('${k.replace(/'/g,"\\'")}')">Modifier</button></div>`;
+ }).join(''):'<div class="card">Aucune recette personnelle enregistrée.</div>';
+}
+function editRecipe(key=''){
+ const name=prompt('Nom de la recette :',key?key.replace(/^./,c=>c.toUpperCase()):'');if(!name)return;
+ const ing=prompt('Ingrédients séparés par • :',key?recipes[key]||'':'');if(ing===null)return;
+ const ppl=prompt('Ces quantités correspondent à combien de personnes ?',key&&recipeMeta[key]?.basePeople||4);if(ppl===null)return;
+ const nk=name.toLowerCase();
+ if(key&&key!==nk){delete recipes[key];delete recipeMeta[key]}
+ recipes[nk]=ing.trim();
+ recipeMeta[nk]={ingredients:ing.trim(),basePeople:Math.max(1,parseInt(ppl,10)||4),source:'recette personnelle'};
+ localStorage.setItem(K.recipes,JSON.stringify(recipes));
+ localStorage.setItem(K.recipeMeta,JSON.stringify(recipeMeta));
+ renderRecipes();
+}
+
+function categoryFor(item){
+ const s=item.toLowerCase();
+ if(/poulet|porc|boeuf|bœuf|jambon|lardon|saucisse|poisson|thon|cabillaud|œuf|oeuf|chorizo|paleron|chicken|beef|pork|fish/.test(s))return'Viandes, poissons et œufs';
+ if(/riz|pâte|pates|spaghetti|fusilli|penne|macaroni|semoule|lentille|haricot rouge|pomme de terre|farine|rice|pasta|flour/.test(s))return'Féculents et légumineuses';
+ if(/tomate|carotte|courgette|poivron|oignon|salade|poireau|champignon|légume|legume|fruit|citron|roquette|petit pois|maïs|mais|tomato|carrot|onion|pepper|lemon/.test(s))return'Légumes et fruits';
+ if(/lait|crème|creme|fromage|beurre|pâte brisée|pate brisee|pain|milk|cream|cheese|butter|bread/.test(s))return'Crèmerie et boulangerie';
+ return'Épicerie et assaisonnement';
+}
+function normalizeUnit(u){
+ u=normKey(u||'');
+ if(u==='kg'||u==='g'||u==='mg')return'g';
+ if(u==='l'||u==='cl'||u==='ml')return'ml';
+ if(/^piece/.test(u)||/^unite/.test(u)||u==='')return'unit';
+ if(/^tranche/.test(u))return'tranche';
+ if(/^cube/.test(u))return'cube';
+ if(/^boite/.test(u))return'boite';
+ if(/^sachet/.test(u))return'sachet';
+ if(/^pot/.test(u))return'pot';
+ return u;
+}
+function toBaseQty(q,u){
+ const unit=normKey(u||'');
+ if(unit==='kg')return q*1000;
+ if(unit==='mg')return q/1000;
+ if(unit==='l')return q*1000;
+ if(unit==='cl')return q*10;
+ return q;
+}
+function parseIngredientPart(part){
+ const p=String(part||'').trim();
+ const rx=/^(.*?)(\d+(?:[.,]\d+)?|\d+\s+\d+\/\d+|\d+\/\d+)\s*(kg|g|mg|l|cl|ml|pi[eè]ces?|unit[eé]s?|tranches?|cubes?|bo[iî]tes?|sachets?|pots?)?$/i;
+ const m=p.match(rx);
+ if(!m)return {raw:p,parsed:false};
+ const name=m[1].trim().replace(/[-,:]+$/,'').trim();
+ const q=fractionToNumber(m[2]),unit=normalizeUnit(m[3]||'');
+ if(!name||!q)return {raw:p,parsed:false};
+ return {raw:p,parsed:true,name,qty:toBaseQty(q,m[3]||''),unit,key:normKey(name)+'|'+unit};
+}
+function formatBaseQty(q,unit){
+ q=roundSmart(q);
+ if(unit==='g'&&q>=1000)return `${String(roundSmart(q/1000)).replace('.',',')} kg`;
+ if(unit==='ml'&&q>=1000)return `${String(roundSmart(q/1000)).replace('.',',')} l`;
+ if(unit==='ml'&&q>=100)return `${String(roundSmart(q/10)).replace('.',',')} cl`;
+ return `${String(q).replace('.',',')} ${unit==='unit'?'':unit}`.trim();
+}
+function aggregateIngredients(text,map,unresolved=[]){
+ for(const raw of String(text||'').split(/\s*[•;]\s*/)){
+   const p=parseIngredientPart(raw);
+   if(!p.raw||/aucun ingr/i.test(p.raw))continue;
+   if(!p.parsed){unresolved.push(p.raw);continue}
+   if(!map[p.key])map[p.key]={name:p.name,qty:0,unit:p.unit};
+   map[p.key].qty+=p.qty;
+ }
+}
+function cloneStockMap(){
+ const map={};
+ for(const it of stock){
+   const unit=normalizeUnit(it.unit||'');
+   const key=normKey(it.name)+'|'+unit;
+   if(!map[key])map[key]={name:it.name,qty:0,unit};
+   map[key].qty+=toBaseQty(Number(it.qty)||0,it.unit||'');
+ }
+ return map;
+}
+async function ensureMealsIngredients(ds){
+ const meals=[];
+ for(const date of ds)for(const slot of ['midday','evening'])for(const meal of menus[date]?.[slot]||[])if(!/restaurant|aucun repas/i.test(meal.name))meals.push(meal);
+ for(let i=0;i<meals.length;i++){
+   $('#shop-progress').style.display='block';
+   $('#shop-progress').textContent=`Recherche des recettes et calcul des quantités… ${i+1}/${meals.length}`;
+   if(!meals[i].ingredients)await resolveMealIngredients(meals[i]);
+ }
+ save();
+}
+function generateShoppingAsk(){
+ const maxWeeks=Math.max(1,Math.ceil(dates().length/7));
+ let opts=`<option value="${maxWeeks}" selected>Tout le planning (${maxWeeks} semaine${maxWeeks>1?'s':''})</option>`;
+ for(let i=1;i<=maxWeeks;i++)opts+=`<option value="${i}">${i} semaine${i>1?'s':''}</option>`;
+ $('#sheet').innerHTML=`<h2>Générer les courses</h2>
+ <p>PlanningRepas va rechercher les recettes manquantes, calculer les quantités selon les convives, puis déduire le stock disponible.</p>
+ <select id="shop-weeks" class="field">${opts}</select>
+ <p class="muted">Le stock restant est reporté d’une semaine à la suivante. Les ingrédients dont l’unité n’est pas reconnue restent dans « À vérifier ».</p>
+ <button class="secondary" onclick="closeModal()">Annuler</button><button class="primary" onclick="generateShopping()">Générer</button>`;
+ openModal();
+}
+async function generateShopping(){
+ const maxWeeks=Math.max(1,Math.ceil(dates().length/7));
+ const weeks=Math.min(maxWeeks,Math.max(1,+$('#shop-weeks').value||maxWeeks));
+ closeModal();show('courses');
+ const ds=dates().slice(0,weeks*7);
+ await ensureMealsIngredients(ds);
+ const workingStock=cloneStockMap(),perWeek={},forecast={};
+ for(let w=1;w<=weeks;w++){
+   const weekDates=ds.slice((w-1)*7,w*7),needs={},unresolved=[];
+   for(const date of weekDates)for(const slot of ['midday','evening'])for(const meal of menus[date]?.[slot]||[]){
+     if(/restaurant|aucun repas/i.test(meal.name))continue;
+     if(!meal.ingredients){unresolved.push('Recette introuvable : '+meal.name);continue}
+     aggregateIngredients(meal.ingredients,needs,unresolved);
+   }
+   perWeek[w]={};
+   for(const req of Object.values(needs)){
+     const have=workingStock[req.key]?.qty||0;
+     const used=Math.min(have,req.qty);
+     if(workingStock[req.key])workingStock[req.key].qty=Math.max(0,have-used);
+     const missing=Math.max(0,req.qty-used);
+     if(missing>0){
+       const item=`${req.name} ${formatBaseQty(missing,req.unit)}`;
+       const cat=categoryFor(req.name);
+       (perWeek[w][cat]??=[]).push(item);
+     }
+   }
+   if(unresolved.length)perWeek[w]['À vérifier']=[...new Set(unresolved)];
+   forecast[w]=Object.values(workingStock).filter(x=>x.qty>0.0001).map(x=>({...x}));
+ }
+ shopping=perWeek;stockForecast=forecast;
+ localStorage.setItem(K.shopping,JSON.stringify(shopping));
+ localStorage.setItem(K.forecast,JSON.stringify(stockForecast));
+ selectedShopWeek=1;
+ $('#shop-progress').style.display='none';
+ renderShopping();
+}
+async function validateCurrentWeek(){
+ const ds=dates().slice(selectedWeek*7,selectedWeek*7+7);
+ if(!ds.length)return alert('Aucune semaine à valider.');
+ show('courses');
+ $('#shop-progress').style.display='block';
+ await ensureMealsIngredients(ds);
+ // Build only this week against the current stock
+ const needs={},unresolved=[];
+ for(const date of ds)for(const slot of ['midday','evening'])for(const meal of menus[date]?.[slot]||[]){
+   if(/restaurant|aucun repas/i.test(meal.name))continue;
+   if(!meal.ingredients){unresolved.push('Recette introuvable : '+meal.name);continue}
+   aggregateIngredients(meal.ingredients,needs,unresolved);
+ }
+ const working=cloneStockMap(),w=selectedWeek+1,sw={};
+ for(const req of Object.values(needs)){
+   const have=working[req.key]?.qty||0,used=Math.min(have,req.qty);
+   if(working[req.key])working[req.key].qty=Math.max(0,have-used);
+   const missing=Math.max(0,req.qty-used);
+   if(missing>0)(sw[categoryFor(req.name)]??=[]).push(`${req.name} ${formatBaseQty(missing,req.unit)}`);
+ }
+ if(unresolved.length)sw['À vérifier']=[...new Set(unresolved)];
+ shopping[w]=sw;
+ stockForecast[w]=Object.values(working).filter(x=>x.qty>0.0001).map(x=>({...x}));
+ localStorage.setItem(K.shopping,JSON.stringify(shopping));
+ localStorage.setItem(K.forecast,JSON.stringify(stockForecast));
+ selectedShopWeek=w;
+ $('#shop-progress').style.display='none';
+ renderShopping();
+ alert('Semaine validée : les besoins ont été comparés au stock et la liste de courses a été calculée.');
+}
+function changeShopWeek(delta){selectedShopWeek+=delta;renderShopping();window.scrollTo({top:0,behavior:'smooth'});}
+function renderShopping(){
+ const maxWeeks=Math.max(1,Math.ceil(dates().length/7));
+ selectedShopWeek=Math.min(Math.max(1,selectedShopWeek),maxWeeks);
+ $('#shop-week-label').textContent='Semaine '+selectedShopWeek+' / '+maxWeeks;
+ $('#shop-prev').disabled=selectedShopWeek<=1;$('#shop-next').disabled=selectedShopWeek>=maxWeeks;
+ const box=$('#shop-list'),sw=shopping[String(selectedShopWeek)]||shopping[selectedShopWeek];
+ const custom=JSON.parse(localStorage.getItem(K.custom)||'{}'),personal=custom[String(selectedShopWeek)]||custom[selectedShopWeek]||[];
+ const checks=JSON.parse(localStorage.getItem(K.checks)||'{}');box.innerHTML='';
+ if(!sw||!Object.keys(sw).length){
+   box.innerHTML=`<div class="card shop-empty"><b>Semaine ${selectedShopWeek}</b><br>Cette liste n’a pas encore été générée. Utilisez « Générer / régénérer » ou « Valider la semaine & calculer les courses » dans Menus.</div>`;
+ }else{
+   Object.entries(sw).forEach(([cat,items])=>{
+     box.insertAdjacentHTML('beforeend',`<div class="shopcat">${esc(cat)}</div>`);
+     [...new Set(items)].forEach(item=>{
+       const key=`${selectedShopWeek}|${cat}|${item}`;
+       box.insertAdjacentHTML('beforeend',`<label class="shopitem"><input type="checkbox" ${checks[key]?'checked':''} onchange="toggleCheck('${encodeURIComponent(key)}',this.checked)"><span>${esc(item)}</span></label>`);
+     });
+   });
+ }
+ if(personal.length){
+   box.insertAdjacentHTML('beforeend','<div class="shopcat">Ajouts personnels</div>');
+   [...new Set(personal)].forEach(item=>{
+     const key=`${selectedShopWeek}|Ajouts personnels|${item}`;
+     box.insertAdjacentHTML('beforeend',`<label class="shopitem personal"><input type="checkbox" ${checks[key]?'checked':''} onchange="toggleCheck('${encodeURIComponent(key)}',this.checked)"><span>${esc(item)}</span></label>`);
+   });
+ }
+ const fc=stockForecast[String(selectedShopWeek)]||stockForecast[selectedShopWeek]||[];
+ if(fc.length)box.insertAdjacentHTML('beforeend',`<div class="card forecast-card"><b>📦 Stock prévisionnel restant après cette semaine</b><div class="forecast-lines">${fc.map(x=>`${esc(x.name)} : ${esc(formatBaseQty(x.qty,x.unit))}`).join('<br>')}</div></div>`);
+}
+function toggleCheck(key,checked){key=decodeURIComponent(key);const checks=JSON.parse(localStorage.getItem(K.checks)||'{}');checks[key]=checked;localStorage.setItem(K.checks,JSON.stringify(checks))}
+function addShoppingItem(){const n=prompt('Article à ajouter :');if(!n)return;const c=JSON.parse(localStorage.getItem(K.custom)||'{}');(c[selectedShopWeek]??=[]).push(n.trim());localStorage.setItem(K.custom,JSON.stringify(c));renderShopping();}
+
+function renderStock(){
+ const box=$('#stock-list');
+ if(!stock.length)box.innerHTML='<div class="card">Votre stock est vide. Ajoutez les produits que vous avez déjà.</div>';
+ else box.innerHTML=stock.map((x,i)=>`<div class="stockitem"><div><b>${esc(x.name)}</b><br><span>${esc(String(x.qty).replace('.',','))} ${esc(x.unit||'unité(s)')}</span></div><div><button class="smallbtn secondary" onclick="editStockItem(${i})">Modifier</button><button class="smallbtn delete" onclick="removeStockItem(${i})">Supprimer</button></div></div>`).join('');
+ const f=$('#stock-forecast'),fc=stockForecast[selectedShopWeek]||stockForecast[String(selectedShopWeek)]||[];
+ f.innerHTML=fc.length?`<div class="card"><b>Prévision après la semaine ${selectedShopWeek}</b><br>${fc.map(x=>`${esc(x.name)} : ${esc(formatBaseQty(x.qty,x.unit))}`).join('<br>')}</div>`:'';
+}
+function editStockItem(i=null){
+ const old=i===null?{name:'',qty:'',unit:'g'}:stock[i];
+ const name=prompt('Ingrédient / produit :',old.name||'');if(!name)return;
+ const qty=prompt('Quantité disponible :',old.qty??'');if(qty===null)return;
+ const unit=prompt('Unité (kg, g, l, cl, ml, unité, tranche, boîte...) :',old.unit||'g');if(unit===null)return;
+ const item={name:name.trim(),qty:Math.max(0,Number(String(qty).replace(',','.'))||0),unit:unit.trim()||'unité'};
+ if(i===null)stock.push(item);else stock[i]=item;
+ localStorage.setItem(K.stock,JSON.stringify(stock));renderStock();
+}
+function removeStockItem(i){if(!confirm('Supprimer cet article du stock ?'))return;stock.splice(i,1);localStorage.setItem(K.stock,JSON.stringify(stock));renderStock();}
+function clearStock(){if(!confirm('Vider entièrement le stock ?'))return;stock=[];localStorage.setItem(K.stock,'[]');renderStock();}
+
+$('#pdf-file').addEventListener('change',e=>importPdf(e.target.files[0]));
+if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js?v=44');
+
+requestAnimationFrame(()=>document.querySelector('.bottom-nav button[data-target="home"]')?.classList.add('active'));

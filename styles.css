@@ -103,3 +103,43 @@ body::before{background:rgba(8,28,38,.16)!important}
 .welcome{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}.welcome .notice{flex-basis:100%}
 .archive-themes .primary{background:var(--green2)!important}.archive-themes .secondary{background:rgba(255,255,255,.93)!important;color:#17352f!important;border:1px solid #cadbd5}
 @media(max-width:760px){body,body[data-page]{background-attachment:scroll!important}.welcome>.btn-blue{width:100%}}
+
+/* ============================================================
+   PointJour — VERSION FINALE 2026.09
+   Navigation type VeilleJurSoc + décors distincts par page
+   ============================================================ */
+body,body[data-page]{background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important;background-attachment:fixed!important}
+body[data-page="choose"],body[data-page="signin"]{background-image:url('assets/final/signin.jpg')!important}
+body[data-page="brief"],body[data-page="home"]{background-image:url('assets/final/brief.jpg')!important}
+body[data-page="mail"]{background-image:url('assets/final/mail.jpg')!important}
+body[data-page="calendar"]{background-image:url('assets/final/calendar.jpg')!important}
+body[data-page="watches"],body[data-page="watch"]{background-image:url('assets/final/watches.jpg')!important}
+body[data-page="edit"],body[data-page="sourceedit"]{background-image:url('assets/final/edit.jpg')!important}
+body[data-page="web"],body[data-page="search"]{background-image:url('assets/final/web.jpg')!important}
+body[data-page="sources"]{background-image:url('assets/final/sources.jpg')!important}
+body[data-page="archives"]{background-image:url('assets/final/archives.jpg')!important}
+body[data-page="settings"]{background-image:url('assets/final/settings.jpg')!important}
+body[data-page="more"]{background-image:url('assets/final/more.jpg')!important}
+body[data-page="loading"]{background-image:url('assets/final/signin.jpg')!important}
+body::before{background:linear-gradient(90deg,rgba(4,28,45,.22),rgba(255,255,255,.02) 48%,rgba(6,38,48,.12))!important}
+
+/* Barre de navigation : visuellement proche de VeilleJurSoc */
+.nav{left:0!important;right:0!important;bottom:0!important;width:100%!important;transform:none!important;border-radius:0!important;background:#073d66!important;border-top:1px solid rgba(255,255,255,.18)!important;box-shadow:0 -8px 28px rgba(0,25,50,.35)!important;padding:5px 18px calc(5px + env(safe-area-inset-bottom))!important}
+.nav-buttons{width:min(820px,78vw)!important;min-height:68px!important;display:grid!important;grid-template-columns:repeat(5,1fr)!important;gap:8px!important}
+.nav button{min-height:58px!important;color:#fff!important;background:transparent!important;border:1px solid transparent!important;border-radius:10px!important;font-size:1.18rem!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:1px!important}
+.nav button:hover{background:rgba(255,255,255,.09)!important;border-color:rgba(255,255,255,.12)!important}
+.nav button.active{background:#205c85!important;border-color:rgba(255,255,255,.22)!important;box-shadow:inset 0 3px 0 #9fe3cb!important}
+.nav small{font-size:.69rem!important;color:#fff!important;font-weight:800!important}
+.signature{position:absolute!important;right:18px!important;bottom:27px!important;color:#fff!important;font-size:.68rem!important;font-weight:800!important}
+
+/* Palette de boutons proche de VeilleJurSoc */
+:root{--pj-blue:#0b64ad;--pj-green:#16845f;--pj-orange:#e99b08;--pj-purple:#744aa6;--pj-navy:#073d66}
+.btn-blue{background:linear-gradient(90deg,#1574c0,#085b9b)!important}.btn-green,.primary{background:linear-gradient(90deg,#1a9a71,#15795b)!important}.btn-orange{background:linear-gradient(90deg,#f2a917,#db8c00)!important}.btn-purple{background:linear-gradient(90deg,#8558ba,#69429a)!important}
+.secondary{border:1px solid #c7d8df!important;background:rgba(255,255,255,.95)!important;color:#173d4a!important}.danger{background:#b93a48!important;color:#fff!important}
+.card,.tile,.item,.source-link,.menu-list button{background:rgba(255,255,255,.92)!important;border:1px solid rgba(255,255,255,.78)!important;box-shadow:0 12px 30px rgba(0,31,50,.14)!important}
+.scene,.signin-scene{background:rgba(255,255,255,.89)!important;border:1px solid rgba(255,255,255,.84)!important;box-shadow:0 14px 38px rgba(0,31,50,.18)!important}
+.archive-themes{gap:7px!important;margin-top:10px!important}.archive-themes button{font-weight:800!important}.archive-item{transition:transform .15s ease,box-shadow .15s ease}.archive-item:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(0,31,50,.19)!important}
+.source .row{gap:7px!important}.source .row .secondary,.source .row .danger{min-width:92px!important}
+.version-stamp{margin:18px auto 0;width:max-content;max-width:100%;padding:7px 12px;border-radius:999px;background:rgba(7,61,102,.86);color:#fff;font-size:.74rem;font-weight:800;box-shadow:0 7px 18px rgba(0,31,50,.18)}
+
+@media(max-width:760px){body,body[data-page]{background-attachment:scroll!important;background-position:center top!important}.nav{padding-left:4px!important;padding-right:4px!important}.nav-buttons{width:100%!important;gap:3px!important}.nav button{min-height:53px!important;font-size:1rem!important}.nav small{font-size:.59rem!important}.signature{display:none!important}.source .row .secondary,.source .row .danger{min-width:0!important}}

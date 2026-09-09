@@ -1,17 +1,25 @@
-# PointJour — Version finale 2026.09
+# PointJour — FINALE PROPRE
 
-Version finale validée techniquement avant livraison.
+Version reconstruite visuellement, sans réutiliser les anciens décors V12/V13/V14/V15.
 
-## Changements visibles
-- Une seule page principale : **Brief** (plus de doublon Accueil / Brief).
-- Brief : comptes Privé / Travail, bouton **Actualiser**, Gmail, Agenda et veilles.
-- Navigation : **Brief · Veilles · Recherche · Archives · Plus**, style bleu nuit inspiré de VeilleJurSoc.
-- Recherche Web : bouton **Modifier** directement sur chaque veille + **Lancer la recherche**.
-- Archives : filtres dynamiques **Tous les thèmes / Paie / Auto / Cuisine / futures veilles**, résultats cliquables.
-- Sources : jusqu’à 30, ajout/modification/test/activation/suppression/restauration.
-- 11 décors HD distincts, sans texte ni fausse interface incrustée, couvrant connexion, brief, Gmail, agenda, veilles, édition, recherche, sources, archives, paramètres et Plus.
-- Migration locale : Paie, Auto et Cuisine sont recréées si un ancien stockage local incomplet en avait perdu une.
-- Signature : Bastiaan (31) TM.
+## Structure validée
+- Brief = page principale.
+- Navigation : Brief · Veilles · Recherche · Archives · Plus.
+- Gmail : « Voir les messages ».
+- Agenda : « Voir les événements ».
+- Veilles : « Lancer la recherche ».
+- Recherche Web : bouton « Modifier » dans chaque bloc.
+- Archives : Tous les thèmes · Paie · Auto · Cuisine, puis veilles personnalisées.
+- Sources : ajout, modification, test, activation/désactivation, suppression et restauration.
+- Comptes : Privé / Travail.
+- Jusqu'à 20 sous-thèmes par veille et 30 sources.
 
-## GitHub Pages
-Décompresser le contenu du ZIP à la racine du dépôt PointJour. La PWA utilise des chemins relatifs adaptés à GitHub Pages.
+## Refonte visuelle
+- Barre de navigation bleu nuit inspirée de VeilleJurSoc.
+- Boutons bleu, vert, orange et violet.
+- Décors propres et distincts selon les pages/états.
+- Aucun faux bouton, aucune fausse interface, aucun texte incrusté dans les fonds.
+- Aucun ancien asset `emu-*` inclus.
+
+## Cache
+Service Worker : `pointjour-finale-propre-2026-09-09`.
